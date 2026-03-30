@@ -1452,7 +1452,7 @@ int inPRINT_Buffer_GetHeightFlow(void)
 	
 	if (ginDebug == VS_TRUE)
 	{
-		inLogPrintf(AT, "inPRINT_Buffer_GetHeightFlow() START!");
+		inLogPrintf(AT, "s() START!");
 	}
 	
 	/* 初始化結構 */

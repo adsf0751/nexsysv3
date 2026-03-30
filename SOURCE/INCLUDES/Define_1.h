@@ -77,7 +77,8 @@
 #define VS_ESCAPE                               (-3)                              /* 空白回傳值 */
 #define VS_TIMEOUT                              (-4)                              /* TIME OUT */
 #define VS_HANDLE_NULL                          (-1)                              /* Ingenico機型定義為0x00，V5為-1 */
-
+#define VS_USER_AGREE                           1
+#define VS_USER_DISAGREE                        0
 /* 定義按鍵值 */
 #define _KEY_0_					d_KBD_0
 #define _KEY_1_					d_KBD_1

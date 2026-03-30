@@ -13,6 +13,7 @@
 #define _NOTICE_LOGO_			"./fs_data/BMPNOTICE.bmp"       /* 商店提示 */
 #define _END_LOGO_			"./fs_data/END.bmp"             /* ***列印完成*** */
 #define _NCCC_DEMO_			"./fs_data/NCCCTrain.bmp"       /* 教育訓練模式 */
+#define _MSG_DEMO_			"./fs_data/msg.bmp"            /*  */
 
 /* TMS列印用圖片路徑 */
 #define _TMS_DOWNLOAD_STATUS_		"./fs_data/TMS_STATUS.bmp"      /* TMS下載狀態 */

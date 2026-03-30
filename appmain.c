@@ -193,10 +193,73 @@ int main(int argc,char *argv[])
         TRANSACTION_OBJECT  pobTran = {};
 	inFLOW_RunFunction(&pobTran, _EDC_BOOTING_RENEW_AUTO_REBOOT_TIME_);	/* 紀錄PCI重新開機時間 */
         
+        memset(&pobTran,0x00,sizeof(TRANSACTION_OBJECT));
+        sprintf(pobTran.srBRec.szCardLabel,"MASTER");
+        sprintf(pobTran.srBRec.szPAN,"543912******1234(C)");
+        sprintf(pobTran.srBRec.szAuthCode,"999999");
+        sprintf(pobTran.srBRec.szDate,"20260320");
+        sprintf(pobTran.srBRec.szTime,"210500");
+        pobTran.srBRec.lnTxnAmount = 123456789;
+        char    szCustomerIndicator[3 + 1] = {0};
+        memset(szCustomerIndicator, 0x00, sizeof(szCustomerIndicator));
+	inGetCustomIndicator(szCustomerIndicator);
+        inLogPrintf(AT, "szCustomerIndicator is [%s]",szCustomerIndicator);
 	/* Idle流程 */
 	while (1)
 	{
-		inMENU_Decide_Idle_Menu();
+            if( !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_021_TAKAWEL_   , sizeof(_CUSTOMER_INDICATOR_021_TAKAWEL_))     ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_026_TAKA_      , sizeof(_CUSTOMER_INDICATOR_026_TAKA_))        ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_098_MCDONALDS_, sizeof(_CUSTOMER_INDICATOR_098_MCDONALDS_))    ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_105_MCDONALDS_, sizeof(_CUSTOMER_INDICATOR_105_MCDONALDS_))    ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_109_,sizeof(_CUSTOMER_INDICATOR_109_))                        ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_119_, sizeof(_CUSTOMER_INDICATOR_119_))                        ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_123_IKEA_, sizeof(_CUSTOMER_INDICATOR_123_IKEA_))             ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_124_EVER_RICH_, sizeof(_CUSTOMER_INDICATOR_124_EVER_RICH_))    ||
+
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_093_, sizeof(_CUSTOMER_INDICATOR_093_))                       ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_107_BUMPER_, sizeof(_CUSTOMER_INDICATOR_107_BUMPER_))         ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_100_, sizeof(_CUSTOMER_INDICATOR_100_))                        ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_111_KIOSK_STANDARD_, sizeof(_CUSTOMER_INDICATOR_111_KIOSK_STANDARD_)) ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_112_, sizeof(_CUSTOMER_INDICATOR_112_))                        ||
+
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_041_CASH_, sizeof(_CUSTOMER_INDICATOR_041_CASH_)) ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_042_BDAU1_, sizeof(_CUSTOMER_INDICATOR_042_BDAU1_)) ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_043_BDAU9_, sizeof(_CUSTOMER_INDICATOR_043_BDAU9_)) ||
+
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_065_, sizeof(_CUSTOMER_INDICATOR_065_)) ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_126_MASTERCARD_FLIGHT_TICKET_, sizeof(_CUSTOMER_INDICATOR_126_MASTERCARD_FLIGHT_TICKET_)) ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_084_ON_US_, sizeof(_CUSTOMER_INDICATOR_084_ON_US_)) ||                   
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_087_ON_US_NO_ID_,sizeof(_CUSTOMER_INDICATOR_087_ON_US_NO_ID_)) ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_094_, sizeof(_CUSTOMER_INDICATOR_094_)) ||
+                !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_104_, sizeof(_CUSTOMER_INDICATOR_104_)) )
+                {
+                    inLogPrintf(AT, "szCustomerIndicator is [%s]:do nothing",szCustomerIndicator);
+    //                return VS_SUCCESS;
+                }
+
+            int inRetVal =  inSupDigitalReceipt();
+            if(inRetVal == VS_USER_AGREE)
+            {
+                inLogPrintf(AT, "inSupDigitalReceipt inRetVal is agree");
+                inRetVal = inDispDigitalReceipt(&pobTran);
+                if(inRetVal == VS_TIMEOUT)
+                {
+                    inLogPrintf(AT, "inDispDigitalReceipt inRetVal = timeout or Press Btn0");
+                    //此畫面Timeout 時間30秒或按數字【0】鍵回待機畫面
+                }
+                else if(inRetVal == VS_SUCCESS)
+                {
+                    inLogPrintf(AT, "inDispDigitalReceipt inRetVal = Press Btn1");
+                    //按數字【1】鍵重印上一筆帳單
+                }
+            }
+            else if(inRetVal == VS_USER_DISAGREE || inRetVal == VS_TIMEOUT || inRetVal == VS_USER_CANCEL)
+            {
+                // Timeout或是不同意，則改紙本列印簽帳單
+                inLogPrintf(AT, "inSupDigitalReceipt inRetVal is disagree or VS_TIMEOUT or VS_USER_CANCEL");
+            }
+            break;
+            inMENU_Decide_Idle_Menu();
 	}
 
 	return (VS_SUCCESS);

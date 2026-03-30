@@ -397,7 +397,44 @@ Describe	:看座標是否在要做反應的區域內
 int inDisTouch_InArea(DISTOUCH_OBJECT *srDisTouchObj, int inTouchSensorFunc)
 {
 	int	inFlag = 0;		/* 回傳按到哪個區域，在DisTouch.h中用整數定義 */
+        
+        if(inTouchSensorFunc == _APPROVAL_CHECK_Touch_MENU_)
+        {
+            /* 初步檢核，XY座標不為零，且為下筆狀態 */
+            if ((srDisTouchObj->inX_Temp != 0) && (srDisTouchObj->inY_Temp != 0))
+            {
+                    if ((srDisTouchObj->inX_Temp >= 45)	&& 
+                        (srDisTouchObj->inX_Temp <= 170)	&& 
+                        (srDisTouchObj->inY_Temp >= 255)	&& 
+                        (srDisTouchObj->inY_Temp <= 285))
+                    {
+                            inFlag = _AGREE_TOUCH_YES_;
+                            srDisTouchObj->inPenStatus = _DisTouch_PenStatus_Up_;
+                            inDisTouch_Close_TouchFile(&ginTouch_Handle);
 
+                            return (inFlag);
+                    }
+
+            }
+
+            /* 初步檢核，XY座標不為零，且為下筆狀態 */
+            if ((srDisTouchObj->inX_Temp != 0) && (srDisTouchObj->inY_Temp != 0))
+            {
+                    if ((srDisTouchObj->inX_Temp >= 45)	&& 
+                        (srDisTouchObj->inX_Temp <= 200)	&& 
+                        (srDisTouchObj->inY_Temp >= 315)	&& 
+                        (srDisTouchObj->inY_Temp <= 340))
+                    {
+                            inFlag = _AGREE_TOUCH_NO_;
+                            srDisTouchObj->inPenStatus = _DisTouch_PenStatus_Up_;
+                            inDisTouch_Close_TouchFile(&ginTouch_Handle);
+
+                            return (inFlag);
+                    }
+
+            }
+        }
+        
 	/* 不偵測畫面的觸控點擊 */
 	if (inTouchSensorFunc == _Touch_NONE_) 
         {

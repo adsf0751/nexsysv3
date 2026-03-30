@@ -314,6 +314,9 @@ typedef enum
 		
 	/* _Touch_O_ */
 	_Touch_O_LINE8_8_ENTER_BUTTON_,
+        /*AGREE_TOUCH_YES/NO*/        
+        _AGREE_TOUCH_YES_,
+        _AGREE_TOUCH_NO_,
 		
 	_Touch_X_LINE8_8_CANCEL_BUTTON_,                    /* _Touch_X_ */
 	_KEY_IN_MENU_LINE_3_TO_8_4X7_Touch_KEY_A_BUTTON_,   /* _Touch_KEY_IN_MENU_LINE_3_TO_8_4X7_ */
@@ -357,6 +360,9 @@ typedef enum
         _KEY_IN_MENU_LINE_3_TO_8_3X4_Touch_KEY_CL_BUTTON_,   /* _Touch_KEY_IN_MENU_LINE_3_TO_4_3X4_ */
 	_KEY_IN_MENU_LINE_3_TO_8_3X4_Touch_KEY_0_BUTTON_,   /* _Touch_KEY_IN_MENU_LINE_3_TO_4_3X4_ */
         _KEY_IN_MENU_LINE_3_TO_8_3X4_Touch_KEY_OK_BUTTON_,  /* _Touch_KEY_IN_MENU_LINE_3_TO_4_3X4_ */
+        
+        /* _APPROVAL_CHECK_Touch_MENU_ */
+	_APPROVAL_CHECK_Touch_MENU_,
 }DISTOUCH;
 
 /* 座標值 START */

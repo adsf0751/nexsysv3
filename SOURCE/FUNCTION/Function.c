@@ -92,6 +92,7 @@
 #include "USB.h"
 #include "Utility.h"
 #include "EDC_Para_Table_Func.h"
+#include "../PRINT/PrtMsg.h"
 
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 
@@ -25808,7 +25809,7 @@ int inFunc_Booting_Flow_Sync_Debug(TRANSACTION_OBJECT *pobTran)
 	}
 	inSetISODebug(szISODebug);
 	inSaveEDCRec(0);
-	
+	/* inFunc_Sync_Debug_Switch 會把ginDebug 設定為False，導致之後的Log看不到 */
 	/* 將ISODebug和Table同步 */
 	inRetVal = inFunc_Sync_Debug_Switch();
 	inRetVal = inFunc_Sync_ISODebug_Switch();
@@ -32548,4 +32549,169 @@ int inFunc_Get_UpperCase_Char(char* szString)
 	}
 	
 	return (inAmount);
+}
+int inDispDigitalReceipt(TRANSACTION_OBJECT* pobTran)
+{
+    inLogPrintf(AT, "----------------------------------------");
+    inLogPrintf(AT, "inDispDigitalReceipt() START !");
+    int inRetVal  = VS_ERROR;
+    char    szTemplate[500 + 1];
+    char    szDispAmount[100+ 1];
+    unsigned char   uszkey;
+    CTOS_LCDTClearDisplay();
+
+    inDISP_PutGraphic(_NAME_LOGO_,  0, _COORDINATE_Y_LINE_16_2_);
+//    if(inDISP_PutGraphic(_NCCC_LOGO_, 0,  _COORDINATE_Y_LINE_16_2_) !=VS_SUCCESS)
+//    {
+//        inLogPrintf(AT, "%s is error",_NCCC_LOGO_);
+//    }
+//    memset(szTemplate,0x00, sizeof(szTemplate));
+//    strcpy(szTemplate, "聯合特約商店");
+//    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, 110, 40, VS_FALSE);
+//    if(inDISP_PutGraphic(_NAME_LOGO_, 0,  _COORDINATE_Y_LINE_16_3_) !=VS_SUCCESS)
+//    {
+//        inLogPrintf(AT, "%s is error",_NAME_LOGO_);
+//    }
+
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    sprintf(szTemplate,"卡號/卡別:%-16s授權碼:%s",pobTran->srBRec.szCardLabel,pobTran->srBRec.szAuthCode);
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_8_3_, VS_FALSE); 
+     
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    sprintf(szTemplate,pobTran->srBRec.szPAN);
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X22_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_16_6_, VS_FALSE);
+
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    sprintf(szTemplate,"日期/時間:%.4s/%.2s/%.2s %.2s:%.2s",pobTran->srBRec.szDate,pobTran->srBRec.szDate+4,pobTran->srBRec.szDate+6,pobTran->srBRec.szTime,pobTran->srBRec.szTime+2);
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X33_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_16_7_, VS_FALSE);
+
+    memset(szDispAmount,0x00, sizeof(szDispAmount));
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    sprintf(szDispAmount,"%ld",pobTran->srBRec.lnTxnAmount);
+    inFunc_Amount_Comma(szDispAmount, "NT$", 0x00, _SIGNED_NONE_, 16, _PADDING_RIGHT_);
+    
+    sprintf(szTemplate,"總計(Total) %17s",szDispAmount);
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_8X33_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_16_9_, VS_FALSE);
+    
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    strcpy(szTemplate, "https://www.google.com/intl/zh-TW/chrome/");
+    strcat(szTemplate,"r/550e8400-e29b-41d4-a716-446655440000001");//sys_guid()
+    inDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_);
+    
+    memset(szTemplate,0x00, sizeof(szTemplate));                  
+    strcpy(szTemplate, "持卡人存根聯");
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X33_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_9_, _COORDINATE_Y_LINE_16_11_, VS_FALSE);
+
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    strcpy(szTemplate, "I AGREE TO PAY TOTAL ");
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_9_, _COORDINATE_Y_LINE_16_12_, VS_FALSE);
+
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    strcpy(szTemplate, "AMOUNT ACCORDING");
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_9_, _COORDINATE_Y_LINE_16_13_, VS_FALSE);
+
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    strcpy(szTemplate, "TO CARD ISSUER");
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_9_, _COORDINATE_Y_LINE_16_14_, VS_FALSE);
+
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    strcpy(szTemplate, "AGREEMENT");
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_9_, _COORDINATE_Y_LINE_16_15_, VS_FALSE);
+
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    strcpy(szTemplate, "掃描 QR Code 取得數位簽單");
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_4_, _COORDINATE_Y_LINE_16_16_, VS_FALSE);                       
+    CTOS_KBDGet(&uszkey);
+
+//    inDISP_Timer_Start(_TIMER_NEXSYS_1_, 30);
+    //inRetVal預設VS_ERROR，當inRetVal有異動(經過switch case或是timeout)跳出迴圈
+    while(inRetVal == VS_ERROR)
+    {
+        uszkey = -1;
+        uszkey = uszKBD_Key();
+        if (inTimerGet(_TIMER_NEXSYS_1_) == VS_SUCCESS)
+        {
+//            inRetVal = VS_TIMEOUT;
+        }
+        switch (uszkey)
+        {
+            case _KEY_CANCEL_:
+                inLogPrintf(AT, "Key Cancel");
+                inRetVal = VS_USER_CANCEL;
+                break;
+            case _KEY_0_ : 
+                //此畫面Timeout 時間30秒或按數字【0】鍵回待機畫面，
+                //預設按數字【0】鍵為TIMEOUT或是要新增一個enum
+                inRetVal = VS_TIMEOUT;
+                break;
+            case _KEY_1_ :
+                //按數字【1】鍵重印上一筆帳單
+                inRetVal = VS_SUCCESS;
+                break;
+            default :
+                continue;
+        }
+    }
+    inLogPrintf(AT, "inDispDigitalReceipt() END !");
+    inLogPrintf(AT, "----------------------------------------");
+
+    return(inRetVal);
+}
+
+int inSupDigitalReceipt()
+{
+    inLogPrintf(AT, "----------------------------------------");
+    inLogPrintf(AT, "inSupDigitalReceipt() START !");
+    int inChoice = 0;
+    int inRetVal = VS_ERROR;
+    unsigned char   uszkey;
+    CTOS_LCDTClearDisplay();
+    inDISP_PutGraphic(_MENU_HOST_098_NCCC_,  0, _COORDINATE_Y_LINE_16_2_);
+    inDISP_PutGraphic(_MENU_CARDHOLDER_ASK,  0, _COORDINATE_Y_LINE_16_4_);
+    inDISP_PutGraphic(_GET_DIGITAL_RECEIPT_, 0, _COORDINATE_Y_LINE_16_6_);
+    inDISP_PutGraphic(_GET_USER_AGREE_,     40, _COORDINATE_Y_LINE_16_9_);
+    inDISP_PutGraphic(_GET_USER_DISAGREE_,  40, _COORDINATE_Y_LINE_16_11_);
+
+    inDISP_Timer_Start(_TIMER_NEXSYS_1_, 30);
+    //inRetVal預設VS_ERROR，當inRetVal有異動(經過switch case或是timeout)跳出迴圈
+    while (inRetVal == VS_ERROR)
+    {
+        uszkey = -1;
+        uszkey = uszKBD_Key();
+        inChoice = inDisTouch_TouchSensor_Click_Slide(_APPROVAL_CHECK_Touch_MENU_);
+        if (inChoice == _AGREE_TOUCH_YES_)
+        {
+            uszkey = _KEY_1_;
+        }
+        else if (inChoice == _AGREE_TOUCH_NO_)
+        {
+            uszkey = _KEY_0_;
+        }
+
+        /* Timeout */
+        if (inTimerGet(_TIMER_NEXSYS_1_) == VS_SUCCESS)
+        {
+            inRetVal  = VS_TIMEOUT;
+        }
+        switch (uszkey)
+        {
+            case _KEY_CANCEL_:
+                inLogPrintf(AT, "Key Cancel");
+                inRetVal = VS_USER_CANCEL;
+                break;
+            case _KEY_0_ : 
+                inLogPrintf(AT, "Click Disagree");
+                inRetVal = VS_USER_DISAGREE;
+                break;
+            case _KEY_1_ :
+                inLogPrintf(AT, "Click Agree");
+                inRetVal = VS_USER_AGREE;
+                break;
+            default :
+                continue;
+        }
+    }
+    inLogPrintf(AT, "inSupDigitalReceipt() END !");
+    inLogPrintf(AT, "----------------------------------------");
+    return inRetVal; 
 }

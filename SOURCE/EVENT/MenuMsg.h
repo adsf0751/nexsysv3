@@ -238,6 +238,8 @@
 #define _MENU_TMS_SCHEDULE_TITLE_	"./fs_data/TITLE/TMSSCHDL_T.bmp"	/* 參數詢問 */
 #define _MENU_TMS_REPORT_TITLE_		"./fs_data/TITLE/TMSREPORT_T.bmp"	/* 參數資訊回報 */
 
+#define _MENU_CARDHOLDER_ASK            "./fs_data/TITLE/CARDHOLDER_ASK.bmp" /* 請詢問持卡人 */
+
 /* MENU OPTION */
 #define _MENU_SALE_OPTION_		"./fs_data/SALEOPT.bmp"
 #define _MENU_SALE_OPTION_TK3C_		"./fs_data/SALEOPT_TK3C.bmp"		/* 一般交易、紅利、分期 */
@@ -265,6 +267,10 @@
 #define _MENU_FUNC5_OPTION_		"./fs_data/FUNC5OPT.bmp"	/* TMS參數下載、DCC參數下載、至現回報 */
 #define _MENU_FUNC6_OPTION_		"./fs_data/FUNC6OPT.bmp"	/* 設定管理號碼、資訊回報、參數下載、版本查詢 */
 #define _MENU_GET_CARD_NO_OPTION_	"./fs_data/GETCARDNOOPT.bmp"	/* 請選擇？ 1.輸入交易編號 2.輸入卡號 */
+
+#define _GET_DIGITAL_RECEIPT_           "./fs_data/DIGITAL_RECEIPT.bmp" /* 是否同意接收數位化簽帳單? */
+#define _GET_USER_AGREE_                "./fs_data/USER_AGREE.bmp"          /*【同意(1)】*/
+#define _GET_USER_DISAGREE_                "./fs_data/USER_DISAGREE.bmp"    /*【不同意(0)】*/
 
 /* AMOUNT、STID、MANAGER NUM、AUTHCODE */
 #define _GET_AMOUNT_                    "./fs_data/GETAMOUNT.bmp"	/* 請輸入金額 */
