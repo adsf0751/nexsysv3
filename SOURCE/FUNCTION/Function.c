@@ -545,7 +545,7 @@ int inFunc_Amount_Comma_DCC(char *szAmt, char* szCurSymbol, char szPad_char, int
 
 	/* 去除金額前面的空白 */
 	for (i = 0; i < 12; i ++)
-	{
+	{       
 		/* 加入i == 12 - 1 是為了避免0元不會複製金額的情況 */
 		if ((szTemplate[i] != 0x30 && szTemplate[i] != 0x20) || 
 		     i == 12 - 1)
@@ -15461,7 +15461,7 @@ int inFunc_DiscardSpace(char *szTemplate)
 	int	i;
 	int	inStringCnt = 0;
 	char	szString[1024 + 1] = {0};
-	
+	//逐字讀取每個字元計算字串長度，可能出現字串超過1024個字或是遇到\0結束。
 	do
 	{
 		if (*(szTemplate + inStringCnt) == 0x00)
@@ -15478,7 +15478,7 @@ int inFunc_DiscardSpace(char *szTemplate)
 	
 	memset(szString, 0x00, sizeof(szString));
 	strcat(szString, szTemplate);
-	
+	/* 從後往前，找到第一個出現不是' '的index */
 	for (i = (inStringCnt - 1); i >= 0; i --)
 	{
 		if (szString[i] != ' ')
@@ -15490,7 +15490,7 @@ int inFunc_DiscardSpace(char *szTemplate)
 	{
 		return (VS_SUCCESS);
 	}
-	
+	/* 只取不包含space的部分 */
 	memset(szTemplate, 0x00, inStringCnt);
 	memcpy(szTemplate, szString, i + 1);
 	
@@ -17651,7 +17651,8 @@ int inFunc_Sync_Debug_Switch(void)
 	}
 	else
 	{
-		ginDebug = VS_FALSE;
+            inLogPrintf(AT,"ginDebug is %d",ginDebug);
+//		ginDebug = VS_FALSE;
 	}
 	
 	return (VS_SUCCESS);
@@ -32592,12 +32593,7 @@ int inDispDigitalReceipt(TRANSACTION_OBJECT* pobTran)
     
     sprintf(szTemplate,"總計(Total) %17s",szDispAmount);
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_8X33_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_16_9_, VS_FALSE);
-    
-    memset(szTemplate,0x00, sizeof(szTemplate));
-    strcpy(szTemplate, "https://www.google.com/intl/zh-TW/chrome/");
-    strcat(szTemplate,"r/550e8400-e29b-41d4-a716-446655440000001");//sys_guid()
-    inDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_);
-    
+
     memset(szTemplate,0x00, sizeof(szTemplate));                  
     strcpy(szTemplate, "持卡人存根聯");
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X33_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_9_, _COORDINATE_Y_LINE_16_11_, VS_FALSE);
@@ -32620,8 +32616,21 @@ int inDispDigitalReceipt(TRANSACTION_OBJECT* pobTran)
 
     memset(szTemplate,0x00, sizeof(szTemplate));
     strcpy(szTemplate, "掃描 QR Code 取得數位簽單");
-    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_4_, _COORDINATE_Y_LINE_16_16_, VS_FALSE);                       
-    CTOS_KBDGet(&uszkey);
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_4_, _COORDINATE_Y_LINE_16_16_, VS_FALSE);
+    
+//    memset(szTemplate,0x00, sizeof(szTemplate));
+//    strcpy(szTemplate, "https://www.google.com/intl/zh-TW/chrome/");
+//    strcat(szTemplate,"r/550e8400-e29b-41d4-a716-446655440000001");//sys_guid()
+//    inDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_);
+    
+/*test------*/
+    char baseUrl[] = "https://www.google.com/search?q=";
+    int len = strlen(baseUrl);
+    memset(szTemplate,0x00, sizeof(szTemplate));
+    memcpy(szTemplate,baseUrl,sizeof(baseUrl));
+    memset(&szTemplate[len],'a',350);
+    inCusDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_,1,QR_VERSION149X149);
+/*test------*/
 
 //    inDISP_Timer_Start(_TIMER_NEXSYS_1_, 30);
     //inRetVal預設VS_ERROR，當inRetVal有異動(經過switch case或是timeout)跳出迴圈

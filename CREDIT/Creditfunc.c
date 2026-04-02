@@ -134,7 +134,7 @@ int inCREDIT_Func_Get_OPT_Amount(TRANSACTION_OBJECT *pobTran)
 
 	/* idle進入 */
 	if (ginEventCode >= '1' && ginEventCode <= '9')
-        {
+        {       /* inMENU_000_MenuFlow_NEWUI > _ECR_EVENT_ > inMENU_ECR會設定pobTran->uszECRBit = VS_TRUE*/
 		/* 若ECR或idle有輸入金額就跳走，OPT已經輸入過 */
 		if (pobTran->uszECRBit == VS_TRUE)
 		{
