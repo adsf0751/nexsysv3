@@ -216,6 +216,7 @@ int SALE_CTLS_TRT_NCCC_ATS_TABLE[] =
 	_FUNCTION_DUPLICATE_CHECK_,
 	_COMM_MODEM_PREDIAL_,
         _CREDIT_FUNCTION_GET_AMOUNT_,
+        _FUNCTION_CHESG_CHECK_,/* 輸入金額後 詢問持卡人是否同意接收數位化簽帳單  */
 	_NCCC_FUNCTION_CHECK_AMOUNT_BY_CARD_,
         _FUNCTION_CHECK_BATCH_LIMIT_,
         _CREDIT_FUNCTION_GET_STOREID_,
@@ -243,6 +244,7 @@ int SALE_CTLS_TRT_NCCC_ATS_TABLE[] =
 	_CREDIT_FUNCTION_CHECKRESULT_,
 	_FUNCTION_GET_SIGNPAD_,
         _FUNCTION_PRINT_RECEIPT_BY_BUFFER_FLOW_,
+        _FUNCTION_Display_CHESG_,/* 螢幕顯示數位化簽帳單 */
 	_NCCC_FUNCTION_SEND_ECR_AFTER_PRINT_RECEIPT_,
 	_NCCC_FUNCTION_RECEIVE_EI_FLOW_,
 	_NCCC_ESC_UPLOAD_,
@@ -751,6 +753,7 @@ int INST_SALE_CTLS_TRT_NCCC_ATS_TABLE[] =
 	_FUNCTION_DUPLICATE_CHECK_,
 	_COMM_MODEM_PREDIAL_,
         _CREDIT_FUNCTION_GET_AMOUNT_,
+        _FUNCTION_CHESG_CHECK_,/* 輸入金額後 詢問持卡人是否同意接收數位化簽帳單  */
 	_NCCC_FUNCTION_CHECK_AMOUNT_BY_CARD_,
         _FUNCTION_CHECK_BATCH_LIMIT_,
         _CREDIT_FUNCTION_GET_PERIOD_,
@@ -775,6 +778,7 @@ int INST_SALE_CTLS_TRT_NCCC_ATS_TABLE[] =
 	_CREDIT_FUNCTION_CHECKRESULT_,
 	_FUNCTION_GET_SIGNPAD_,
         _FUNCTION_PRINT_RECEIPT_BY_BUFFER_FLOW_,
+        _FUNCTION_Display_CHESG_,/* 螢幕顯示數位化簽帳單 */
 	_NCCC_FUNCTION_SEND_ECR_AFTER_PRINT_RECEIPT_,
 	_NCCC_FUNCTION_RECEIVE_EI_FLOW_,
 	_NCCC_ESC_UPLOAD_,
@@ -2703,6 +2707,9 @@ int SALE_CTLS_TRT_NCCC_MFES_TABLE[] =
 	_CREDIT_FUNCTION_CHECKRESULT_,
 	_FUNCTION_GET_SIGNPAD_,
         _FUNCTION_PRINT_RECEIPT_BY_BUFFER_FLOW_,
+    /*螢幕顯示數位化簽帳單 BEGIN*/
+        _FUNCTION_Display_CHESG_,
+    /*螢幕顯示數位化簽帳單 END*/
 	_NCCC_FUNCTION_SEND_ECR_AFTER_PRINT_RECEIPT_,
 	_NCCC_FUNCTION_RECEIVE_EI_FLOW_,
 	_NCCC_ESC_UPLOAD_,
@@ -3378,6 +3385,7 @@ int REDEEM_SALE_TRT_NCCC_MFES_TABLE[] =
 	_FUNCTION_DUPLICATE_CHECK_,
 	_COMM_MODEM_PREDIAL_,
         _CREDIT_FUNCTION_GET_AMOUNT_,
+        _FUNCTION_CHESG_CHECK_,/* 輸入金額後 詢問持卡人是否同意接收數位化簽帳單  */
         _FUNCTION_CHECK_BATCH_LIMIT_,
         _CREDIT_FUNCTION_GET_STOREID_,
 	_CREDIT_FUNCTION_GET_PRODUCT_CODE_,
@@ -3399,6 +3407,7 @@ int REDEEM_SALE_TRT_NCCC_MFES_TABLE[] =
 	_CREDIT_FUNCTION_CHECKRESULT_,
 	_FUNCTION_GET_SIGNPAD_,
         _FUNCTION_PRINT_RECEIPT_BY_BUFFER_FLOW_,
+        _FUNCTION_Display_CHESG_,/* 螢幕顯示數位化簽帳單 */
 	_NCCC_FUNCTION_SEND_ECR_AFTER_PRINT_RECEIPT_,
 	_NCCC_FUNCTION_RECEIVE_EI_FLOW_,
 	_NCCC_ESC_UPLOAD_,
@@ -6083,6 +6092,10 @@ int inNCCC_DCC_Func_Must_SETTLE(TRANSACTION_OBJECT *pobTran)
 	}
 	
 	memset(szHostEnable, 0x00, sizeof(szHostEnable));
+        /*
+           inNCCC_DCC_GetDCC_Enable: global index判斷是否有dcc index，
+           有就直接用，inLoadHDT取得DCC那筆資料，更新主機功能值到szHostEnable
+         */
 	if (inNCCC_DCC_GetDCC_Enable(pobTran->srBRec.inHDTIndex, szHostEnable) != VS_SUCCESS)
 	{
                 vdUtility_SYSFIN_LogMessage(AT, "inNCCC_DCC_Func_Must_SETTLE inNCCC_DCC_GetDCC_Enable failed");
@@ -13376,7 +13389,12 @@ int inNCCC_Func_BuildAndSendPacket_Flow(TRANSACTION_OBJECT *pobTran)
 	char	szCFESMode[2 + 1] = {0};
 
         vdUtility_SYSFIN_LogMessage(AT, "inNCCC_Func_BuildAndSendPacket_Flow START!");
-        
+        if (ginDebug == VS_TRUE)
+        {
+                memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                sprintf(szDebugMsg, "inNCCC_Func_BuildAndSendPacket_Flow START!");
+                inLogPrintf(AT, szDebugMsg);
+        }
 	if (ginFindRunTime == VS_TRUE)
 	{
 		inFunc_RecordTime_Append("%d %s", __LINE__, __FUNCTION__);
@@ -13470,7 +13488,12 @@ int inNCCC_Func_BuildAndSendPacket_Flow(TRANSACTION_OBJECT *pobTran)
 	}
         
         vdUtility_SYSFIN_LogMessage(AT, "inNCCC_Func_BuildAndSendPacket_Flow END ReVal%d", inRetVal);
-	
+        if (ginDebug == VS_TRUE)
+        {
+                memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                sprintf(szDebugMsg, "inNCCC_Func_BuildAndSendPacket_Flow END!");
+                inLogPrintf(AT, szDebugMsg);
+        }
 	return (inRetVal);
 }
 
@@ -25591,7 +25614,13 @@ Describe        :
 int inNCCC_Func_Check_Update_Batch_Num(TRANSACTION_OBJECT* pobTran)
 {
 	int	inRetVal = VS_SUCCESS;
-        
+        char szDebugMsg[100 + 1] = {0};
+        if (ginDebug == VS_TRUE)
+        {
+                memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                sprintf(szDebugMsg, "inNCCC_Func_Check_Update_Batch_Num START!");
+                inLogPrintf(AT, szDebugMsg);
+        }
         vdUtility_SYSFIN_LogMessage(AT, "inNCCC_Func_Check_Update_Batch_Num START!");
 	
 	if (pobTran->uszUpdateBatchNumBit == VS_TRUE)
@@ -25599,7 +25628,12 @@ int inNCCC_Func_Check_Update_Batch_Num(TRANSACTION_OBJECT* pobTran)
 		pobTran->uszUpdateBatchNumBit = VS_FALSE;
 		inRetVal = inFLOW_RunFunction(pobTran, _FUNCTION_UPDATE_BATCH_NUM_);
 	}
-	
+        if (ginDebug == VS_TRUE)
+        {
+                memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                sprintf(szDebugMsg, "inNCCC_Func_Check_Update_Batch_Num END!");
+                inLogPrintf(AT, szDebugMsg);
+        }
 	return (inRetVal);
 }
 

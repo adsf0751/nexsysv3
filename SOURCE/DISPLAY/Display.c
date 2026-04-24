@@ -6810,3 +6810,38 @@ int inDISP_Clear_Area_New(int inXL, int inYL, int inXR, int inYR, int inFoneSize
 
         return (VS_SUCCESS);
 }
+
+int inCusDISP_Display_QRCode(char* szDispMsg, int inX, int inY,int inSz,int inVersion)
+{
+	char			szDebugMsg[100 + 1] = {0};
+	unsigned short		usRetVal = VS_ERROR;
+	CTOS_QRCODE_INFO	srQR_INFO = {0};
+	
+	srQR_INFO.InfoVersion = QR_INFO_VERSION;
+	srQR_INFO.Size = inSz;				/* 縮放 5預設值 10:兩倍 1:五分之一 */
+	srQR_INFO.Version = inVersion;		/* QR Code的大小 21 x 21 到 177 x 177 財政部查電子發票 至少要V6以上 */
+	srQR_INFO.Level = QR_LEVEL_M;			/* 錯誤修正(資料回復能力) Level L M Q H 商業用途: L or M 工業環境: Q or H 設定愈高影響可儲存的資料量*/
+
+	usRetVal = CTOS_QRCodeDisplay(&srQR_INFO, szDispMsg, inX, inY);
+	if (usRetVal != d_OK)
+	{
+		if (ginDebug == VS_TRUE)
+		{
+			memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+			sprintf(szDebugMsg, "CTOS_QRCodeDisplay Err :0x%04X", usRetVal);
+			inLogPrintf(AT, szDebugMsg);
+		}
+		return (VS_ERROR);
+	}
+	else
+	{
+		if (ginDebug == VS_TRUE)
+		{
+			memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+			sprintf(szDebugMsg, "CTOS_QRCodeDisplay() OK");
+			inLogPrintf(AT, szDebugMsg);
+		}
+	}
+	
+	return (VS_SUCCESS);
+}

@@ -138,8 +138,12 @@ FUNC_TABLE FunctionTable[] =
 		{_FUNCTION_CHECK_BATCH_LIMIT_,                  inFunc_Check_Batch_limit},
 		{_FUNCTION_GET_HOST_NUM_FLOW_,			inFunc_GetHostNum_Flow},
 		{_FUNCTION_GET_HOST_NUM_NEWUI_CUS_075_,		inFunc_GetHostNum_NewUI_Cus_075},
-
-		{_CREDIT_FUNCTION_GET_AMOUNT_,                  inCREDIT_Func_GetAmount},
+                
+                {_FUNCTION_CHESG_CHECK_,         		inFunc_CHESG_Check},
+                {_FUNCTION_Display_CHESG_,			inFunc_Display_CHESG},
+		
+                
+                {_CREDIT_FUNCTION_GET_AMOUNT_,                  inCREDIT_Func_GetAmount},
 		{_CREDIT_FUNCTION_GET_TIP_AMOUNT_,              inCREDIT_Func_GetTipAmount},
 		{_CREDIT_FUNCTION_GET_REFUND_AMOUNT_,		inCREDIT_Func_GetRefundAmount},
 		{_CREDIT_FUNCTION_GET_ADJUST_AMOUNT_,           inCREDIT_Func_GetAdjustAmount},

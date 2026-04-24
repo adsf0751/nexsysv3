@@ -69,7 +69,10 @@ int inLoadHDPTRec(int inHDPTRec)
 	
 	/* 加速用 */
 	if (_PARAMETER_SAVE_WAY_DAT_ == _PARAMETER_SAVE_WAY_DAT_SQLITE_)
-	{
+	{       /*
+                 * srall link table ，內容是 globl HDPT_REC srHDPTRec的 &srHDPTRec.xxx的參數
+                 * call inSqlite_Get_Table_ByRecordID_All select 一筆結果出來更新到srHDPTRec
+                 */
 		inRetVal = inLoadHDPTRec_SQLite(inHDPTRec);
 	}
 	else

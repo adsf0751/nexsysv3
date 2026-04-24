@@ -467,6 +467,5 @@ int inFunc_DisplayInstallmentWarning(TRANSACTION_OBJECT *pobTran);
 /* import */
 void vdCTOSS_PrinterTTFSelect(BYTE *baFilename, BYTE bIndex);
 void vdCTOSS_RotateBMPFileEx(char *szFileName, int inRotate);
-
-int inSupDigitalReceipt(void);
-int inDispDigitalReceipt(TRANSACTION_OBJECT*);
+int inFunc_CHESG_Check(TRANSACTION_OBJECT* pobTran);
+int inFunc_Display_CHESG(TRANSACTION_OBJECT* pobTran);

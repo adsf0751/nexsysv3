@@ -197,7 +197,9 @@ SQLITE_TAG_TABLE TABLE_BATCH_TAG[] =
         {"szFlightTicketPDS0523"        ,"BLOB"		,""		,""},	/* 出發地機場代碼（PDS 0523）左靠右補空白 */
         {"szFlightTicketPDS0524"        ,"BLOB"		,""		,""},	/* 目的地機場代碼（PDS 0524）左靠右補空白 */
         {"szFlightTicketPDS0530"        ,"BLOB"		,""		,""},	/* 航班號碼（PDS 0530） */
-	{"uszWAVESchemeID"		,"BLOB"		,""		,""},	/* WAVE 使用用於組電文 Field_22 */
+	{"szCHESGEnable"                ,"BLOB"		,""		,""},	/* 判斷是否同意 持卡人存根聯數位化  同意為Y 不同意為N*/
+	{"szCHESGQRCode"                ,"BLOB"		,""		,""},	/* 持卡人同意數位化簽帳單時的簽帳單網址 */
+        {"uszWAVESchemeID"		,"BLOB"		,""		,""},	/* WAVE 使用用於組電文 Field_22 */
 	{"uszVOIDBit"			,"BLOB"		,""		,""},	/* 負向交易 */
         {"uszUpload1Bit"		,"BLOB"		,""		,""},	/* Offline交易使用 (原交易advice是否已上傳)*/
         {"uszUpload2Bit"		,"BLOB"		,""		,""},	/* Offline交易使用 (當前交易是否為advice)*/

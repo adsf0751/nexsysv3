@@ -169,7 +169,9 @@ typedef struct TagBATCH_REC
         char            szFlightTicketPDS0523[5 + 1];                   /* 出發地機場代碼（PDS 0523）左靠右補空白 */
         char            szFlightTicketPDS0524[5 + 1];                   /* 目的地機場代碼（PDS 0524）左靠右補空白 */
         char            szFlightTicketPDS0530[5 + 1];                   /* 航班號碼（PDS 0530） */
-	unsigned char	uszWAVESchemeID;				/* WAVE 使用用於組電文 Field_22 */
+	char            szCHESGEnable[1 + 1];                           /* 判斷是否同意 持卡人存根聯數位化  同意為Y 不同意為N*/
+        char            szCHESGQRCode[36 + 1];                          /* 持卡人同意數位化簽帳單時的簽帳單網址，sys_guid()目前最長可以達 36個字元 */
+        unsigned char	uszWAVESchemeID;				/* WAVE 使用用於組電文 Field_22 */
         unsigned char	uszVOIDBit;					/* 負向交易 */
         unsigned char	uszUpload1Bit;					/* Offline交易使用 (原交易advice是否未上傳)*/
         unsigned char	uszUpload2Bit;					/* Offline交易使用 (原交易advice調帳是否未上傳)*/

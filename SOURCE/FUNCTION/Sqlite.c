@@ -996,7 +996,9 @@ int inSqlite_Table_Link_BRec(TRANSACTION_OBJECT *pobTran, SQLITE_ALL_TABLE *srAl
                 {0	,"szFlightTicketPDS0523"        ,pobTran->srBRec.szFlightTicketPDS0523          ,strlen(pobTran->srBRec.szFlightTicketPDS0523)	},	/* 出發地機場代碼（PDS 0523）左靠右補空白 */
                 {0	,"szFlightTicketPDS0524"        ,pobTran->srBRec.szFlightTicketPDS0524          ,strlen(pobTran->srBRec.szFlightTicketPDS0524)	},	/* 目的地機場代碼（PDS 0524）左靠右補空白 */
                 {0	,"szFlightTicketPDS0530"        ,pobTran->srBRec.szFlightTicketPDS0530          ,strlen(pobTran->srBRec.szFlightTicketPDS0530)	},	/* 航班號碼（PDS 0530） */
-		
+		{0	,"szCHESGEnable"                ,pobTran->srBRec.szCHESGEnable                  ,strlen(pobTran->srBRec.szCHESGEnable)          },      /* 判斷是否同意 持卡人存根聯數位化  同意為Y 不同意為N*/
+                {0	,"szCHESGQRCode"                ,pobTran->srBRec.szCHESGQRCode                  ,strlen(pobTran->srBRec.szCHESGQRCode)          },      /* 持卡人同意數位化簽帳單時的簽帳單網址 */
+                       
 		{0	,"uszWAVESchemeID"		,&pobTran->srBRec.uszWAVESchemeID		,1						},	/* WAVE 使用用於組電文 Field_22 */
 		{0	,"uszVOIDBit"			,&pobTran->srBRec.uszVOIDBit			,1						},	/* 負向交易 */
 	        {0	,"uszUpload1Bit"		,&pobTran->srBRec.uszUpload1Bit			,1						},	/* Offline交易使用 (原交易advice是否已上傳)*/
@@ -9796,7 +9798,7 @@ static int inSqlite_fsync_retry(int fd)
 	{
 		if (fsync(fd) == 0)
 			return (VS_SUCCESS);
-		if (errno == EINTR)
+		if (errno == EINTR) /*系統呼叫被 signal 中斷*/
 			continue;
 		break;
 	}while(1);

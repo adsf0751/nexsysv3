@@ -575,3 +575,4 @@ int inDISP_PutGraphic_Rotate(char *szFileName, int inX, int inY, int inRotation)
 int inDISP_TimeoutCheck_Not_Disp(void);
 int inDISP_Enter8x16_Character_Mask_And_DisTouch_For_Flight_ticket(DISPLAY_OBJECT  *srDispObj);
 int inDISP_Clear_Area_New(int inXL, int inYL, int inXR, int inYR, int inFoneSize);
+int inCusDISP_Display_QRCode(char* szDispMsg, int inX, int inY,int inSz,int inVersion);
