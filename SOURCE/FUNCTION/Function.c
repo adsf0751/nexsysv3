@@ -7177,7 +7177,12 @@ int inFunc_PrintReceipt_ByBuffer_Flow(TRANSACTION_OBJECT *pobTran)
 	{
 		inFunc_RecordTime_WatchAll();
 	}
-	
+        /*需求單，詢問持卡人是否同意顯示電子簽帳單，如果同意跳過紙本列印*/
+	if(memcmp(pobTran->srBRec.szCHESGEnable,"Y",1) == 0)
+        {
+            inLogPrintf(AT, "szCHESGEnable is %s",pobTran->srBRec.szCHESGEnable);
+            return VS_SUCCESS;
+        }
 	memset(szCustomerIndicator, 0x00, sizeof(szCustomerIndicator));
 	inGetCustomIndicator(szCustomerIndicator);
 	
@@ -10884,7 +10889,13 @@ int inFunc_UpdateInvNum(TRANSACTION_OBJECT *pobTran)
 	TRANSACTION_OBJECT	pobTempTran = {0};
         
 	vdUtility_SYSFIN_LogMessage(AT, "inFunc_UpdateInvNum START!");
-        
+        char  szDebugMsg[100 +1] = {0};
+        if (ginDebug == VS_TRUE)
+        {
+                memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                sprintf(szDebugMsg, "inFunc_UpdateInvNum START!");
+                inLogPrintf(AT, szDebugMsg);
+        }
 	memset(szCustomerIndicator, 0x00, sizeof(szCustomerIndicator));
 	inGetCustomIndicator(szCustomerIndicator);
 	
@@ -11328,7 +11339,12 @@ int inFunc_UpdateInvNum(TRANSACTION_OBJECT *pobTran)
 	
         /* 之後補上強制結帳的動作 */
         vdUtility_SYSFIN_LogMessage(AT, "inFunc_UpdateInvNum END!");
-
+        if (ginDebug == VS_TRUE)
+        {
+                memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                sprintf(szDebugMsg, "inFunc_UpdateInvNum END!");
+                inLogPrintf(AT, szDebugMsg);
+        }
         return (VS_SUCCESS);
 }
 
@@ -11349,7 +11365,13 @@ int inFunc_UpdateBatchNum(TRANSACTION_OBJECT *pobTran)
 	long    lnMaxBatch = 0;
 	
 	vdUtility_SYSFIN_LogMessage(AT, "inFunc_UpdateBatchNum START!");
-	
+        char szDebugMsg[100 + 1] = {0};
+        if (ginDebug == VS_TRUE)
+        {
+                memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                sprintf(szDebugMsg, "inFunc_UpdateBatchNum START!");
+                inLogPrintf(AT, szDebugMsg);
+        }
 	memset(szCustomerIndicator, 0x00, sizeof(szCustomerIndicator));
 	inGetCustomIndicator(szCustomerIndicator);
 	
@@ -11505,7 +11527,12 @@ int inFunc_UpdateBatchNum(TRANSACTION_OBJECT *pobTran)
         {
                 inNCCC_Func_Settlement_XML_Edit(_SETTLENMENT_RECOVER_XML_TAG_FUNCTION_UPDATE_BATCH_NUM_, "Y");
         }
-	
+        if (ginDebug == VS_TRUE)
+        {
+                memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                sprintf(szDebugMsg, "inFunc_UpdateBatchNum END!");
+                inLogPrintf(AT, szDebugMsg);
+        }
         return (VS_SUCCESS);
 }
 
@@ -14043,7 +14070,14 @@ int inFunc_Dir_Make(char *szDirName, char* szSource)
 	/* 組命令 */
 	memset(szCommand, 0x00, sizeof(szCommand));
 	if (strlen(szDirName) != 0)
-	{
+	{          
+            /*
+             * 遞迴建立多層目錄： mkdir -p 2024/march/report (若 2024 或 march 不存在，會同時建立它們)。
+             * 使用 mkdir 建立目錄時若檔案已存在，
+             * 會發生 File exists (檔案已存在) 的錯誤。
+             * 要解決此問題，請使用 mkdir -p 參數，
+             * 這能確保如果目錄存在不會拋出錯誤，並能自動建立上層目錄。
+             */
 		memset(szCommand, 0x00, sizeof(szCommand));
 		sprintf(szCommand, "mkdir -p  ");
 		if (strlen(szSource) != 0)
@@ -17896,10 +17930,21 @@ int inFunc_Find_Specific_HDTindex(int inOrgIndex, char *szHostName, int *inHostI
 		{
 			/* 找到的index */
 			*inHostIndex = i;
-			
+                        if (ginDebug == VS_TRUE)
+                        {
+                                memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                                sprintf(szDebugMsg, "Find HostName is %s ",szHostName);
+                                inLogPrintf(AT, szDebugMsg);
+                        }		
 			/* 代表有可回復的Host(保險機制) */
 			if(inOrgIndex >= 0)
 			{
+                                if (ginDebug == VS_TRUE)
+                                {
+                                        memset(szDebugMsg, 0x00, sizeof(szDebugMsg));
+                                        sprintf(szDebugMsg, "Load Original HDT Rec,index is %d",inOrgIndex);
+                                        inLogPrintf(AT, szDebugMsg);
+                                }
 				/* 回覆原本的Host */
 				inLoadHDTRec(inOrgIndex);
 			}
@@ -28531,7 +28576,7 @@ int inFunc_Get_Battery_Capacity(unsigned char* uszPercentage)
 /*
 Function        :inFunc_Device_Model_Get
 Date&Time       :2018/5/8 下午 9:00
-Describe        :
+Describe        :取得終端機的型號。
 */
 int inFunc_Device_Model_Get(unsigned char* uszModel)
 {
@@ -28565,7 +28610,7 @@ int inFunc_Device_Model_Get(unsigned char* uszModel)
 /*
 Function        :inFunc_Decide_Machine_Type
 Date&Time       :2018/5/8 下午 9:09
-Describe        :
+Describe        :取得端末機型號對應的機型
 */
 int inFunc_Decide_Machine_Type(int* inType)
 {
@@ -29272,6 +29317,12 @@ int inFunc_Check_USB_Mounted(void)
 	
 	/* 有掛載udisk */
 	memset(szCommand, 0x00, sizeof(szCommand));
+        /*
+         mount                   列出掛載清單
+         mount <裝置> <路徑>	 執行掛載
+         mount | grep '/media/udisk' 可以想像成cat |grep...，
+         列出系統目前的「掛載清單」符合/media/udisk路徑底下
+         */
 	sprintf(szCommand, "mount | grep '/media/udisk'");
 
 	inRetVal = inFunc_ShellCommand_System(szCommand);
@@ -32551,21 +32602,31 @@ int inFunc_Get_UpperCase_Char(char* szString)
 	
 	return (inAmount);
 }
-int inDispDigitalReceipt(TRANSACTION_OBJECT* pobTran)
+
+/*
+Function        :inFunc_Display_CHESG
+Date&Time       :2026/4/21 下午 6:07
+Describe        :螢幕顯示數位化簽帳單
+*/
+int inFunc_Display_CHESG(TRANSACTION_OBJECT* pobTran)
 {
     inLogPrintf(AT, "----------------------------------------");
-    inLogPrintf(AT, "inDispDigitalReceipt() START !");
+    inLogPrintf(AT, "inFunc_Display_CHESG() START !");
     int inRetVal  = VS_ERROR;
     char    szTemplate[500 + 1];
-    char    szDispAmount[100+ 1];
+    char    szDispAmount[100 + 1];
     unsigned char   uszkey;
     CTOS_LCDTClearDisplay();
-
-    inDISP_PutGraphic(_NAME_LOGO_,  0, _COORDINATE_Y_LINE_16_2_);
-//    if(inDISP_PutGraphic(_NCCC_LOGO_, 0,  _COORDINATE_Y_LINE_16_2_) !=VS_SUCCESS)
-//    {
-//        inLogPrintf(AT, "%s is error",_NCCC_LOGO_);
-//    }
+    /* 不同意顯示電子簽帳單，跳過 */
+    if(memcmp(pobTran->srBRec.szCHESGEnable,"Y",1) != 0)
+    {
+        return VS_SUCCESS;
+    }
+    
+    if(inDISP_PutGraphic(_NAME_CUS_LOGO, 0,  _COORDINATE_Y_LINE_16_2_) != VS_SUCCESS)
+    {
+        inLogPrintf(AT, "%s is error",_NAME_CUS_LOGO);
+    }
 //    memset(szTemplate,0x00, sizeof(szTemplate));
 //    strcpy(szTemplate, "聯合特約商店");
 //    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, 110, 40, VS_FALSE);
@@ -32618,72 +32679,131 @@ int inDispDigitalReceipt(TRANSACTION_OBJECT* pobTran)
     strcpy(szTemplate, "掃描 QR Code 取得數位簽單");
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_4_, _COORDINATE_Y_LINE_16_16_, VS_FALSE);
     
-//    memset(szTemplate,0x00, sizeof(szTemplate));
-//    strcpy(szTemplate, "https://www.google.com/intl/zh-TW/chrome/");
-//    strcat(szTemplate,"r/550e8400-e29b-41d4-a716-446655440000001");//sys_guid()
-//    inDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_);
-    
-/*test------*/
-    char baseUrl[] = "https://www.google.com/search?q=";
-    int len = strlen(baseUrl);
     memset(szTemplate,0x00, sizeof(szTemplate));
-    memcpy(szTemplate,baseUrl,sizeof(baseUrl));
-    memset(&szTemplate[len],'a',350);
-    inCusDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_,1,QR_VERSION149X149);
-/*test------*/
+    strcpy(szTemplate, "https://www.google.com/intl/zh-TW/chrome/");
+    strcat(szTemplate,"r/550e8400-e29b-41d4-a716-446655440000001");//sys_guid()
+//    sprintf(szTemplate,"%s",pobTran->srBRec.szCHESGQRCode);//這邊QRCode可能從電文而來?
+    
+    if(strlen(szTemplate) <= 100)
+        inCusDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_, 3,QR_VERSION49X49);
+    else
+        inCusDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_, 2,QR_VERSION73X73);
 
-//    inDISP_Timer_Start(_TIMER_NEXSYS_1_, 30);
+    inDISP_Timer_Start(_TIMER_NEXSYS_1_, 30);
     //inRetVal預設VS_ERROR，當inRetVal有異動(經過switch case或是timeout)跳出迴圈
-    while(inRetVal == VS_ERROR)
+    while(inRetVal != VS_SUCCESS)
     {
         uszkey = -1;
         uszkey = uszKBD_Key();
         if (inTimerGet(_TIMER_NEXSYS_1_) == VS_SUCCESS)
         {
-//            inRetVal = VS_TIMEOUT;
+            inRetVal = VS_SUCCESS;
+            break;
         }
         switch (uszkey)
         {
+        /*
+            //程式測試用
             case _KEY_CANCEL_:
                 inLogPrintf(AT, "Key Cancel");
                 inRetVal = VS_USER_CANCEL;
                 break;
+        */
             case _KEY_0_ : 
                 //此畫面Timeout 時間30秒或按數字【0】鍵回待機畫面，
-                //預設按數字【0】鍵為TIMEOUT或是要新增一個enum
-                inRetVal = VS_TIMEOUT;
+                //inRetVal = VS_SUCCESS，跑完整個TRT流程，回到IDLE。
+                inRetVal = VS_SUCCESS;
                 break;
             case _KEY_1_ :
+                //因為szCHESGEnable為Y會擋列印簽帳單，所以這邊要改設定為N
+                strcpy(pobTran->srBRec.szCHESGEnable,"N");
                 //按數字【1】鍵重印上一筆帳單
-                inRetVal = VS_SUCCESS;
+                inRetVal = inFLOW_RunFunction(pobTran, _FUNCTION_PRINT_RECEIPT_BY_BUFFER_FLOW_); 
                 break;
             default :
                 continue;
         }
     }
-    inLogPrintf(AT, "inDispDigitalReceipt() END !");
+    inLogPrintf(AT, "inFunc_Display_CHESG() END !");
     inLogPrintf(AT, "----------------------------------------");
 
     return(inRetVal);
 }
 
-int inSupDigitalReceipt()
+/*
+Function        :inFunc_CHESG_Check
+Date&Time       :2026/4/21 下午 6:07
+Describe        :輸入金額後 詢問持卡人是否同意接收數位化簽帳單
+*/
+int inFunc_CHESG_Check(TRANSACTION_OBJECT* pobTran)
 {
     inLogPrintf(AT, "----------------------------------------");
-    inLogPrintf(AT, "inSupDigitalReceipt() START !");
+    inLogPrintf(AT, "inFunc_CHESG_Check() START !");
     int inChoice = 0;
     int inRetVal = VS_ERROR;
     unsigned char   uszkey;
-    CTOS_LCDTClearDisplay();
+    char    szCustomerIndicator[3 + 1] = {0};
+
+    //負向交易 或是 非一般交易/紅利/分期 則跳過。
+    if (    pobTran->srBRec.uszVOIDBit              ||
+        !(  pobTran->srBRec.inCode == _SALE_        ||
+            pobTran->srBRec.inCode == _INST_SALE_   ||
+            pobTran->srBRec.inCode == _CUP_SALE_    ||
+            pobTran->srBRec.inCode == _REDEEM_SALE_ ))
+    {
+        inLogPrintf(AT, "inCode IS NOT SUPPORTED ,SKIP inFunc_CHESG_Check");
+        return VS_SUCCESS;
+    }
+    
+    memset(szCustomerIndicator, 0x00, sizeof(szCustomerIndicator));
+    inGetCustomIndicator(szCustomerIndicator);
+    
+    if( !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_021_TAKAWEL_   , _CUSTOMER_INDICATOR_SIZE_)     ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_026_TAKA_      , _CUSTOMER_INDICATOR_SIZE_)     ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_098_MCDONALDS_, _CUSTOMER_INDICATOR_SIZE_)      ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_105_MCDONALDS_, _CUSTOMER_INDICATOR_SIZE_)      ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_109_,_CUSTOMER_INDICATOR_SIZE_)                 ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_119_, _CUSTOMER_INDICATOR_SIZE_)                ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_123_IKEA_, _CUSTOMER_INDICATOR_SIZE_)           ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_124_EVER_RICH_, _CUSTOMER_INDICATOR_SIZE_)      ||
+
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_093_, _CUSTOMER_INDICATOR_SIZE_)                ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_107_BUMPER_, _CUSTOMER_INDICATOR_SIZE_)         ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_100_, _CUSTOMER_INDICATOR_SIZE_)                ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_111_KIOSK_STANDARD_, _CUSTOMER_INDICATOR_SIZE_) ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_112_, _CUSTOMER_INDICATOR_SIZE_)                ||
+
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_041_CASH_,_CUSTOMER_INDICATOR_SIZE_)   ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_042_BDAU1_, _CUSTOMER_INDICATOR_SIZE_) ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_043_BDAU9_, _CUSTOMER_INDICATOR_SIZE_) ||
+
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_065_, _CUSTOMER_INDICATOR_SIZE_)       ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_126_MASTERCARD_FLIGHT_TICKET_, _CUSTOMER_INDICATOR_SIZE_) ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_084_ON_US_, _CUSTOMER_INDICATOR_SIZE_)      ||                   
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_087_ON_US_NO_ID_,_CUSTOMER_INDICATOR_SIZE_) ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_094_, _CUSTOMER_INDICATOR_SIZE_)            ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_104_, _CUSTOMER_INDICATOR_SIZE_) )
+    {
+      inLogPrintf(AT, "szCustomerIndicator is [%s]",szCustomerIndicator);
+      return VS_SUCCESS;
+    }
+    /* 防呆，之前選擇過同意 */
+    if(strlen(pobTran->srBRec.szCHESGEnable) > 0)
+//    if(memcmp(pobTran->srBRec.szCHESGEnable,"Y",1) == 0)
+    {
+        inLogPrintf(AT, "szCHESGEnable is %s",pobTran->srBRec.szCHESGEnable);
+        return VS_SUCCESS;
+    }
+    inDISP_ClearAll();
     inDISP_PutGraphic(_MENU_HOST_098_NCCC_,  0, _COORDINATE_Y_LINE_16_2_);
     inDISP_PutGraphic(_MENU_CARDHOLDER_ASK,  0, _COORDINATE_Y_LINE_16_4_);
     inDISP_PutGraphic(_GET_DIGITAL_RECEIPT_, 0, _COORDINATE_Y_LINE_16_6_);
     inDISP_PutGraphic(_GET_USER_AGREE_,     40, _COORDINATE_Y_LINE_16_9_);
     inDISP_PutGraphic(_GET_USER_DISAGREE_,  40, _COORDINATE_Y_LINE_16_11_);
 
-    inDISP_Timer_Start(_TIMER_NEXSYS_1_, 30);
+    inDISP_Timer_Start(_TIMER_NEXSYS_1_, 7);
     //inRetVal預設VS_ERROR，當inRetVal有異動(經過switch case或是timeout)跳出迴圈
-    while (inRetVal == VS_ERROR)
+    while (inRetVal != VS_SUCCESS)
     {
         uszkey = -1;
         uszkey = uszKBD_Key();
@@ -32700,27 +32820,38 @@ int inSupDigitalReceipt()
         /* Timeout */
         if (inTimerGet(_TIMER_NEXSYS_1_) == VS_SUCCESS)
         {
-            inRetVal  = VS_TIMEOUT;
+            /* 持卡人未選時,一般(ATS 及雲端 MFES)版本流程、小額(MPAS)版本流程可bypass 列紙本簽帳單。 */
+            inRetVal  = VS_SUCCESS;
+            inLogPrintf(AT, "VS_TIMEOUT");
+            strcpy(pobTran->srBRec.szCHESGEnable,"N");
+            break;
         }
         switch (uszkey)
         {
+            /*
+            //程式測試用。
             case _KEY_CANCEL_:
                 inLogPrintf(AT, "Key Cancel");
-                inRetVal = VS_USER_CANCEL;
+                inRetVal = VS_SUCCESS;
                 break;
+            */
             case _KEY_0_ : 
                 inLogPrintf(AT, "Click Disagree");
-                inRetVal = VS_USER_DISAGREE;
+                strcpy(pobTran->srBRec.szCHESGEnable,"N");
+                inRetVal = VS_SUCCESS;
                 break;
             case _KEY_1_ :
                 inLogPrintf(AT, "Click Agree");
-                inRetVal = VS_USER_AGREE;
+                strcpy(pobTran->srBRec.szCHESGEnable,"Y");
+                inRetVal = VS_SUCCESS;
                 break;
-            default :
-                continue;
         }
     }
-    inLogPrintf(AT, "inSupDigitalReceipt() END !");
+    
+    inDISP_ClearAll();
+    inFunc_ResetTitle(pobTran);
+    
+    inLogPrintf(AT, "inFunc_CHESG_Check() END !");
     inLogPrintf(AT, "----------------------------------------");
-    return inRetVal; 
+    return inRetVal;
 }
