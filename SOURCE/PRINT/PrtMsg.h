@@ -7,6 +7,7 @@
 #define _FUBON_LOGO_			"./fs_data/FUBONLOGO.bmp"	/* 銀行LOGO */
 #define _MERCHANT_LOGO_			"./fs_data/BMPLOGO.bmp"         /* 商店LOGO */
 #define _NAME_LOGO_			"./fs_data/BMPNAME.bmp"         /* 表頭文字檔(商店名稱) */
+#define _NAME_CUS_LOGO                  "./fs_data/CUSBMPNAME.bmp"      /* 電子簽單的表頭文字檔 */
 #define _SLOGAN_LOGO_			"./fs_data/BMPSLOGAN.bmp"       /* 企業標語 */
 #define _CUP_LEGAL_LOGO_		"./fs_data/CUPLEGAL.bmp"        /* CUP交易警語 */
 #define _LEGAL_LOGO_			"./fs_data/BMPLEGAL.bmp"        /* 分期交易警語 */
