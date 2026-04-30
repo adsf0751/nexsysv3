@@ -7546,7 +7546,11 @@ int inNCCC_ATS_Pack59_tSAM(TRANSACTION_OBJECT *pobTran, unsigned char *uszPackBu
 	
 	memset(szCustomerIndicator, 0x00, sizeof(szCustomerIndicator));
 	inGetCustomIndicator(szCustomerIndicator);
-
+        /*這邊的szCHESGEnable 是不是要像客製化那樣取得?*/
+        
+        inLogPrintf(AT, "inNCCC_ATS_Pack59_tSAM() ,szCHESGEnable is %s",pobTran->srBRec.szCHESGEnable);
+        inLogPrintf(AT, "inNCCC_ATS_Pack59_tSAM() ,pobTran->inISOTxnCode is %d",pobTran->inISOTxnCode);
+        inLogPrintf(AT, "inNCCC_ATS_Pack59_tSAM() ,pobTran->srBRec.inCode  is %d",pobTran->srBRec.inCode);
 	if (!memcmp(&guszATS_MTI[0], "0500", 4))
 	{
 		/* (需求單 - 107276)自助交易標準做法 MFES雲端化 by Russell 2019/3/5 下午 4:39 */
@@ -10650,6 +10654,27 @@ int inNCCC_ATS_Pack59_tSAM(TRANSACTION_OBJECT *pobTran, unsigned char *uszPackBu
                                 inPacketCnt += inUPLen;
                         }
                 }
+                
+            if ( !memcmp(&guszATS_MTI[0], "0200", 4)       &&          
+                (pobTran->inISOTxnCode == _SALE_        ||
+                 pobTran->inISOTxnCode == _INST_SALE_   ||
+                 pobTran->inISOTxnCode == _CUP_SALE_    ||
+                 pobTran->inISOTxnCode == _REDEEM_SALE_ ))
+            {
+                if(!memcmp(&pobTran->srBRec.szCHESGEnable[0],"Y",1))
+                {
+                    inLogPrintf(AT, "pack field_59 table id is CR");
+                    memcpy(&szPacket[inPacketCnt], "CR", 2); /* Table CR */
+                    inPacketCnt += 2;
+
+                    /* Sub Total Length */
+                    inPacketCnt ++;
+                    szPacket[inPacketCnt] =0X01;
+                    inPacketCnt ++;
+                    memcpy(&szPacket[inPacketCnt], pobTran->srBRec.szCHESGEnable, 1);
+                    inPacketCnt ++;
+                }
+            }
 	}
 	
 	/* Packet Data Length */
@@ -12566,6 +12591,63 @@ int inNCCC_ATS_UnPack59(TRANSACTION_OBJECT *pobTran, unsigned char *uszUnPackBuf
                                         snprintf(pobTran->srTrustRec.szMaskedBeneficiaryId, sizeof(pobTran->srTrustRec.szMaskedBeneficiaryId), "%s", szTemplateBlock);
                                 }
 				inSubCnt += inBlockCnt;
+			}
+                        else if (!memcmp(&uszUnPackBuf[inCnt], "CR", 2))
+			{
+                                inLogPrintf(AT, "unpack59 table id is CR");
+				/* Table ID “CR”: Cardholder Receipt  */
+				inCnt += 2; /* Table ID */
+				if (ginDebug == VS_TRUE)
+				{
+					memset(szTemplate, 0x00, sizeof(szTemplate));	
+					strcat(szTemplate, " Table ID   [");
+					memcpy(&szTemplate[strlen(szTemplate)], &uszUnPackBuf[inCnt - 2], 2);
+					strcat(szTemplate, "]");
+					inLogPrintf(AT, szTemplate);
+				}
+				
+				/* Sub Total Length */
+				inSubTotalLength = ((uszUnPackBuf[inCnt] % 16) * 100) + ((uszUnPackBuf[inCnt + 1] / 16) * 10) + (uszUnPackBuf[inCnt + 1] % 16);
+				inCnt += 2;
+				if (ginDebug == VS_TRUE)
+				{
+					memset(szDebugMsg1, 0x00, sizeof(szDebugMsg1));
+					inFunc_BCD_to_ASCII(szDebugMsg1, &uszUnPackBuf[inCnt-2], 1);
+					memset(szDebugMsg2, 0x00, sizeof(szDebugMsg2));
+					inFunc_BCD_to_ASCII(szDebugMsg2, &uszUnPackBuf[inCnt-1], 1);
+					
+					memset(szTemplate, 0x00, sizeof(szTemplate));
+					strcat(szTemplate, " Table Len  [");
+					strcat(szTemplate, szDebugMsg1);
+					strcat(szTemplate, " ");
+					strcat(szTemplate, szDebugMsg2);
+					strcat(szTemplate, "]");
+					
+					strcat(szTemplate, "[");
+					memset(szTemp, 0x00, sizeof(szTemp));
+					sprintf(szTemp, "%i", atoi(szDebugMsg2));
+					strcat(szTemplate, szTemp);
+					strcat(szTemplate, "]");
+					inLogPrintf(AT, szTemplate);
+				}
+				char baseUrl[] = "https://chesg-uat.nccc.com.tw/qy?t=";
+                                int  urlLen = strlen(baseUrl);
+                                /* 主機回應CR第一個值是Y */
+                                inCnt += 1; 
+                                /* 過濾base url */
+                                inCnt += urlLen;
+				/* sys_guid */
+                                memcpy(&pobTran->srBRec.szCHESGQRCode, &uszUnPackBuf[inCnt], inSubTotalLength-1-urlLen);
+                                inCnt += inSubTotalLength-1-urlLen;
+                                if (ginDebug == VS_TRUE)
+				{
+					memset(szTemplate, 0x00, sizeof(szTemplate));	
+					strcat(szTemplate, "QRCode is [");
+					memcpy(&szTemplate[strlen(szTemplate)], &uszUnPackBuf[inCnt - (inSubTotalLength-1-urlLen)],inSubTotalLength-1-urlLen );
+//                                        memcpy(&szTemplate[strlen(szTemplate)], &uszUnPackBuf[inCnt - 2], 2);
+					strcat(szTemplate, "]");
+					inLogPrintf(AT, szTemplate);
+				}
 			}
 			else
 			{
@@ -15776,7 +15858,6 @@ int inNCCC_ATS_SendPackRecvUnPack(TRANSACTION_OBJECT *pobTran)
 	{
 		inFunc_RecordTime_Append("Pack END");
 	}
-	
         /* 傳送及接收 ISO 電文 */
         if ((inRecvCnt = inNCCC_ATS_CommSendRecvToHost(pobTran, uszSendPacket, inSendCnt, uszRecvPacket)) != VS_SUCCESS)
         {
@@ -19159,7 +19240,8 @@ void vdNCCC_ATS_ISO_FormatDebug_DISP_59(unsigned char *uszDebugBuf, int inFieldL
 		    !memcmp(&uszDebugBuf[inCnt], "UN", 2) ||
 		    !memcmp(&uszDebugBuf[inCnt], "FI", 2) ||
                     !memcmp(&uszDebugBuf[inCnt], "TR", 2) ||
-                    !memcmp(&uszDebugBuf[inCnt], "TV", 2))
+                    !memcmp(&uszDebugBuf[inCnt], "TV", 2) ||
+                    !memcmp(&uszDebugBuf[inCnt], "CR", 2))
 		{
 			/* Table ID */
 			memset(szTemplate, 0x00, sizeof(szTemplate));
