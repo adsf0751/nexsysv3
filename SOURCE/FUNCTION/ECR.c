@@ -4722,7 +4722,7 @@ int inECR_Inquiry_Last_Transction(TRANSACTION_OBJECT * pobTran, ECR_TABLE *srECR
 
 		}
 		inFILE_Close(&ulFileHandle2);
-		
+		/* 0018:請重新感應卡片/重新掃碼/重試交易    */
 		/* 若前一筆回應碼為0018要重啟悠遊卡感應交易 */
 		if (memcmp(&szLastReceBuff[76], "0018", 4) == 0)
 		{
@@ -5389,7 +5389,7 @@ Describe        :分析收銀機傳來的資料
 	
 	/* 存ECR原始資料 */
 	memcpy(srECROb->srTransData.szOrgData, szDataBuffer, inSize);
-	
+        /* 把raw data szDataBuffer依據ECR電文規格，更新資料到 srECROb->srTransData */
 	inECR_8N1_Standard_Parse_Data(srECROb, szDataBuffer);
 	
 	/* ECR Indicator :新 ECR連線 Indicator"I""E"(規格新增欄位 )。 */
@@ -5435,6 +5435,7 @@ Describe        :分析收銀機傳來的資料
 					inLogPrintf(AT, szDebugMsg);
 				}
 				memset(pobTran->szErrorMsgBuff1, 0x00, sizeof(pobTran->szErrorMsgBuff1));
+                                //根據inTransType 顯示對應的中文，ex:inTransType: _ECR_8N1_SALE_NO_，pobTran->szErrorMsgBuff1:一般交易
 				inECR_Transform_8N1_No_To_String(inTransType, pobTran->szErrorMsgBuff1);
 				memset(pobTran->szErrorMsgBuff2, 0x00, sizeof(pobTran->szErrorMsgBuff2));
 				sprintf(pobTran->szErrorMsgBuff2, "ECR Indicator Not \"I\",\"E\",\"Q\" Error");
@@ -5909,6 +5910,11 @@ Describe        :分析收銀機傳來的資料
 			/* 0018 重新感應用成之前的ECR電文 */
 			/* 主要是前面的交易類別：查詢上一筆要轉換回原交易別，並用pobTran->uszLastTranscationBit來識別悠遊卡感應要用舊資料，
 			    OPT跑特殊流程，TRT則跑正常流程 */
+                        /*
+                         * 這邊因為trans typr = 62，
+                         * 所以在上述的inECR_Inquiry_Last_Transction會把start trans type的值放到trans type，
+                         * 這邊的sprintf類似strcpy更新szDataBuffer的值是szTempSendData。
+                         */
 			sprintf(szDataBuffer, szTempSendData);
 			memset(srECROb->srTransData.szTransType, 0x00, sizeof(srECROb->srTransData.szTransType));
 			memset(szTemplate, 0x00, sizeof(szTemplate));
@@ -12156,7 +12162,28 @@ int inECR_8N1_Standard_Pack(TRANSACTION_OBJECT *pobTran, ECR_TABLE * srECROb, ch
 			inPacketSizes += 10;
 		}
 		else
-			inPacketSizes += 78;
+                {
+//                    inPacketSizes += 78;      
+                    inPacketSizes += 16;
+                    if(!memcmp(pobTran->srBRec.szCHESGEnable,"Y",1))
+                    {
+                        inLogPrintf(AT,"pobTran->srBRec.szCHESGEnable is %s",pobTran->srBRec.szCHESGEnable);
+                        inLogPrintf(AT,"PACK ECR電文");
+                        /* 持卡人同意接收數位帳單 */
+                        memcpy(&szDataBuffer[inPacketSizes], pobTran->srBRec.szCHESGEnable, 1);
+                        inPacketSizes++;
+                        /* 持卡人數位簽帳單網址GUID */
+                        memcpy(&szDataBuffer[inPacketSizes], pobTran->srBRec.szCHESGQRCode,sizeof(pobTran->srBRec.szCHESGQRCode));
+                        inPacketSizes += 36;
+
+                    }
+                    else
+                    {
+                        inPacketSizes += 37;
+                    }
+                    /* Reserved */
+                    inPacketSizes += 25; 
+                }
 	}
 	
 	if (gbBarCodeECRBit == VS_TRUE)
