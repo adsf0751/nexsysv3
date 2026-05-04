@@ -12595,72 +12595,71 @@ int inNCCC_ATS_UnPack59(TRANSACTION_OBJECT *pobTran, unsigned char *uszUnPackBuf
                         else if (!memcmp(&uszUnPackBuf[inCnt], "CR", 2))
 			{
 
-				/* Table ID “CR”: Cardholder Receipt  */
-				inCnt += 2; /* Table ID */
-				if (ginDebug == VS_TRUE)
-				{
-					memset(szTemplate, 0x00, sizeof(szTemplate));	
-					strcat(szTemplate, " Table ID   [");
-					memcpy(&szTemplate[strlen(szTemplate)], &uszUnPackBuf[inCnt - 2], 2);
-					strcat(szTemplate, "]");
-					inLogPrintf(AT, szTemplate);
-				}
-				
-				/* Sub Total Length */
-				inSubTotalLength = ((uszUnPackBuf[inCnt] % 16) * 100) + ((uszUnPackBuf[inCnt + 1] / 16) * 10) + (uszUnPackBuf[inCnt + 1] % 16);
-				inCnt += 2;
-				if (ginDebug == VS_TRUE)
-				{
-					memset(szDebugMsg1, 0x00, sizeof(szDebugMsg1));
-					inFunc_BCD_to_ASCII(szDebugMsg1, &uszUnPackBuf[inCnt-2], 1);
-					memset(szDebugMsg2, 0x00, sizeof(szDebugMsg2));
-					inFunc_BCD_to_ASCII(szDebugMsg2, &uszUnPackBuf[inCnt-1], 1);
-					
-					memset(szTemplate, 0x00, sizeof(szTemplate));
-					strcat(szTemplate, " Table Len  [");
-					strcat(szTemplate, szDebugMsg1);
-					strcat(szTemplate, " ");
-					strcat(szTemplate, szDebugMsg2);
-					strcat(szTemplate, "]");
-					
-					strcat(szTemplate, "[");
-					memset(szTemp, 0x00, sizeof(szTemp));
-					sprintf(szTemp, "%i", atoi(szDebugMsg2));
-					strcat(szTemplate, szTemp);
-					strcat(szTemplate, "]");
-					inLogPrintf(AT, szTemplate);
-				}
-                
-                                /* 主機回應CR第一個值是Y */
-                                inCnt += 1; 
-                                /*
-                                char baseUrl[] = "https://chesg-uat.nccc.com.tw/qy?t=";
-                                int  urlLen = strlen(baseUrl);
-                                inCnt += urlLen;
-                                */
-                                /* 過濾base url */
-                                int urlLen  = 0;
-                                for(urlLen = 0; urlLen<=inSubTotalLength-1-5; urlLen++)
+                            /* Table ID “CR”: Cardholder Receipt  */
+                            inCnt += 2; /* Table ID */
+                            if (ginDebug == VS_TRUE)
+                            {
+                                    memset(szTemplate, 0x00, sizeof(szTemplate));	
+                                    strcat(szTemplate, " Table ID   [");
+                                    memcpy(&szTemplate[strlen(szTemplate)], &uszUnPackBuf[inCnt - 2], 2);
+                                    strcat(szTemplate, "]");
+                                    inLogPrintf(AT, szTemplate);
+                            }
+
+                            /* Sub Total Length */
+                            inSubTotalLength = ((uszUnPackBuf[inCnt] % 16) * 100) + ((uszUnPackBuf[inCnt + 1] / 16) * 10) + (uszUnPackBuf[inCnt + 1] % 16);
+                            inCnt += 2;
+                            if (ginDebug == VS_TRUE)
+                            {
+                                    memset(szDebugMsg1, 0x00, sizeof(szDebugMsg1));
+                                    inFunc_BCD_to_ASCII(szDebugMsg1, &uszUnPackBuf[inCnt-2], 1);
+                                    memset(szDebugMsg2, 0x00, sizeof(szDebugMsg2));
+                                    inFunc_BCD_to_ASCII(szDebugMsg2, &uszUnPackBuf[inCnt-1], 1);
+
+                                    memset(szTemplate, 0x00, sizeof(szTemplate));
+                                    strcat(szTemplate, " Table Len  [");
+                                    strcat(szTemplate, szDebugMsg1);
+                                    strcat(szTemplate, " ");
+                                    strcat(szTemplate, szDebugMsg2);
+                                    strcat(szTemplate, "]");
+
+                                    strcat(szTemplate, "[");
+                                    memset(szTemp, 0x00, sizeof(szTemp));
+                                    sprintf(szTemp, "%i", atoi(szDebugMsg2));
+                                    strcat(szTemplate, szTemp);
+                                    strcat(szTemplate, "]");
+                                    inLogPrintf(AT, szTemplate);
+                            }
+
+                            /*
+                            char baseUrl[] = "https://chesg-uat.nccc.com.tw/qy?t=";
+                            int  urlLen = strlen(baseUrl);
+                            inCnt += urlLen;
+                            */
+                            /* 過濾base url */
+                            while(inSubTotalLength > 5)
+                            {
+                                if( !memcmp(&uszUnPackBuf[inCnt],"qy?t=",5))
                                 {
-                                    if( !memcmp(&uszUnPackBuf[inCnt + urlLen],"qy?t=",5))
-                                    {
-                                        urlLen += 5;
-                                        break;
-                                    }
+                                    //skip "qy?t=" 
+                                    inCnt += 5;
+                                    inSubTotalLength -=5;
+                                    break;
                                 }
-                                inCnt += urlLen;
-				/* sys_guid */
-                                memcpy(&pobTran->srBRec.szCHESGQRCode, &uszUnPackBuf[inCnt], inSubTotalLength-1-urlLen);
-                                inCnt += inSubTotalLength-1-urlLen;
-                                if (ginDebug == VS_TRUE)
-				{
-					memset(szTemplate, 0x00, sizeof(szTemplate));	
-					strcat(szTemplate, "QRCode is [");
-					memcpy(&szTemplate[strlen(szTemplate)], &uszUnPackBuf[inCnt - (inSubTotalLength-1-urlLen)],inSubTotalLength-1-urlLen );
-//                                        memcpy(&szTemplate[strlen(szTemplate)], &uszUnPackBuf[inCnt - 2], 2);
-					strcat(szTemplate, "]");
-					inLogPrintf(AT, szTemplate);
-				}
+                                inCnt++;
+                                inSubTotalLength--;
+                            }
+                            /* sys_guid */
+                            memcpy(&pobTran->srBRec.szCHESGQRCode, &uszUnPackBuf[inCnt], inSubTotalLength);
+                            inCnt += inSubTotalLength;
+                            if (ginDebug == VS_TRUE)
+                            {
+                                    memset(szTemplate, 0x00, sizeof(szTemplate));	
+                                    strcat(szTemplate, "QRCode is [");
+                                    memcpy(&szTemplate[strlen(szTemplate)], &uszUnPackBuf[inCnt - inSubTotalLength],inSubTotalLength);
+                                    strcat(szTemplate, "]");
+                                    inLogPrintf(AT, szTemplate);
+                            }
 			}
 			else
 			{
