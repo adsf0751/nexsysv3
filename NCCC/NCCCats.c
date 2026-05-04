@@ -12594,7 +12594,7 @@ int inNCCC_ATS_UnPack59(TRANSACTION_OBJECT *pobTran, unsigned char *uszUnPackBuf
 			}
                         else if (!memcmp(&uszUnPackBuf[inCnt], "CR", 2))
 			{
-                                inLogPrintf(AT, "unpack59 table id is CR");
+
 				/* Table ID “CR”: Cardholder Receipt  */
 				inCnt += 2; /* Table ID */
 				if (ginDebug == VS_TRUE)
@@ -12630,11 +12630,24 @@ int inNCCC_ATS_UnPack59(TRANSACTION_OBJECT *pobTran, unsigned char *uszUnPackBuf
 					strcat(szTemplate, "]");
 					inLogPrintf(AT, szTemplate);
 				}
-				char baseUrl[] = "https://chesg-uat.nccc.com.tw/qy?t=";
-                                int  urlLen = strlen(baseUrl);
+                
                                 /* 主機回應CR第一個值是Y */
                                 inCnt += 1; 
+                                /*
+                                char baseUrl[] = "https://chesg-uat.nccc.com.tw/qy?t=";
+                                int  urlLen = strlen(baseUrl);
+                                inCnt += urlLen;
+                                */
                                 /* 過濾base url */
+                                int urlLen  = 0;
+                                for(urlLen = 0; urlLen<=inSubTotalLength-1-5; urlLen++)
+                                {
+                                    if( !memcmp(&uszUnPackBuf[inCnt + urlLen],"qy?t=",5))
+                                    {
+                                        urlLen += 5;
+                                        break;
+                                    }
+                                }
                                 inCnt += urlLen;
 				/* sys_guid */
                                 memcpy(&pobTran->srBRec.szCHESGQRCode, &uszUnPackBuf[inCnt], inSubTotalLength-1-urlLen);

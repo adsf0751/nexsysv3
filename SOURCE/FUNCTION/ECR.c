@@ -12163,26 +12163,28 @@ int inECR_8N1_Standard_Pack(TRANSACTION_OBJECT *pobTran, ECR_TABLE * srECROb, ch
 		}
 		else
                 {
-//                    inPacketSizes += 78;      
-                    inPacketSizes += 16;
+                    /* 如果持卡人同意接收數位帳單，加送ECR電文欄位47、48 */
                     if(!memcmp(pobTran->srBRec.szCHESGEnable,"Y",1))
                     {
+                        /* 加16是 欄位43~46 */
+                        inPacketSizes += 16;
                         inLogPrintf(AT,"pobTran->srBRec.szCHESGEnable is %s",pobTran->srBRec.szCHESGEnable);
                         inLogPrintf(AT,"PACK ECR電文");
-                        /* 持卡人同意接收數位帳單 */
+                        
+                        /* 持卡人同意接收數位帳單，欄位47 */
                         memcpy(&szDataBuffer[inPacketSizes], pobTran->srBRec.szCHESGEnable, 1);
                         inPacketSizes++;
-                        /* 持卡人數位簽帳單網址GUID */
+                        /* 持卡人數位簽帳單網址GUID，欄位48 */
                         memcpy(&szDataBuffer[inPacketSizes], pobTran->srBRec.szCHESGQRCode,sizeof(pobTran->srBRec.szCHESGQRCode));
                         inPacketSizes += 36;
-
+                        /* Reserved */
+                        inPacketSizes += 25; 
                     }
                     else
                     {
-                        inPacketSizes += 37;
+                        inPacketSizes += 78;
                     }
-                    /* Reserved */
-                    inPacketSizes += 25; 
+                    
                 }
 	}
 	
