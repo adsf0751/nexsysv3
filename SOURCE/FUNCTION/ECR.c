@@ -12163,18 +12163,26 @@ int inECR_8N1_Standard_Pack(TRANSACTION_OBJECT *pobTran, ECR_TABLE * srECROb, ch
 		}
 		else
                 {
+                    if (ginDebug == VS_TRUE)
+                    {
+                        inLogPrintf(AT,"inECR_8N1_Standard_Pack() 不支援HappyGo");
+                        inLogPrintf(AT,"pobTran->srBRec.szCHESGEnable is %s",pobTran->srBRec.szCHESGEnable); 
+                    }
                     /* 如果持卡人同意接收數位帳單，加送ECR電文欄位47、48 */
                     if(!memcmp(pobTran->srBRec.szCHESGEnable,"Y",1))
                     {
-                        /* 加16是 欄位43~46 */
-                        inPacketSizes += 16;
-                        inLogPrintf(AT,"pobTran->srBRec.szCHESGEnable is %s",pobTran->srBRec.szCHESGEnable);
-                        inLogPrintf(AT,"PACK ECR電文");
-                        
-                        /* 持卡人同意接收數位帳單，欄位47 */
+                        /* 是否為機票交易 */
+                        inPacketSizes += 1;
+                        /* 出發地機場代碼 */
+                        inPacketSizes += 5;
+                        /* 目的地機場代碼 */
+                        inPacketSizes += 5;
+                        /* 航班號碼 */
+                        inPacketSizes += 5;  
+                        /* 持卡人同意接收數位帳單 */
                         memcpy(&szDataBuffer[inPacketSizes], pobTran->srBRec.szCHESGEnable, 1);
                         inPacketSizes++;
-                        /* 持卡人數位簽帳單網址GUID，欄位48 */
+                        /* 持卡人數位簽帳單網址GUID */
                         memcpy(&szDataBuffer[inPacketSizes], pobTran->srBRec.szCHESGQRCode,sizeof(pobTran->srBRec.szCHESGQRCode));
                         inPacketSizes += 36;
                         /* Reserved */

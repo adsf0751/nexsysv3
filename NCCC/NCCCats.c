@@ -7546,11 +7546,7 @@ int inNCCC_ATS_Pack59_tSAM(TRANSACTION_OBJECT *pobTran, unsigned char *uszPackBu
 	
 	memset(szCustomerIndicator, 0x00, sizeof(szCustomerIndicator));
 	inGetCustomIndicator(szCustomerIndicator);
-        /*這邊的szCHESGEnable 是不是要像客製化那樣取得?*/
         
-        inLogPrintf(AT, "inNCCC_ATS_Pack59_tSAM() ,szCHESGEnable is %s",pobTran->srBRec.szCHESGEnable);
-        inLogPrintf(AT, "inNCCC_ATS_Pack59_tSAM() ,pobTran->inISOTxnCode is %d",pobTran->inISOTxnCode);
-        inLogPrintf(AT, "inNCCC_ATS_Pack59_tSAM() ,pobTran->srBRec.inCode  is %d",pobTran->srBRec.inCode);
 	if (!memcmp(&guszATS_MTI[0], "0500", 4))
 	{
 		/* (需求單 - 107276)自助交易標準做法 MFES雲端化 by Russell 2019/3/5 下午 4:39 */
@@ -10663,7 +10659,7 @@ int inNCCC_ATS_Pack59_tSAM(TRANSACTION_OBJECT *pobTran, unsigned char *uszPackBu
             {
                 if(!memcmp(&pobTran->srBRec.szCHESGEnable[0],"Y",1))
                 {
-                    inLogPrintf(AT, "pack field_59 table id is CR");
+                    inLogPrintf(AT, "Pack59 Table ID is CR");
                     memcpy(&szPacket[inPacketCnt], "CR", 2); /* Table CR */
                     inPacketCnt += 2;
 
@@ -10671,6 +10667,8 @@ int inNCCC_ATS_Pack59_tSAM(TRANSACTION_OBJECT *pobTran, unsigned char *uszPackBu
                     inPacketCnt ++;
                     szPacket[inPacketCnt] =0X01;
                     inPacketCnt ++;
+                    
+                    /* Data */
                     memcpy(&szPacket[inPacketCnt], pobTran->srBRec.szCHESGEnable, 1);
                     inPacketCnt ++;
                 }
@@ -12595,7 +12593,7 @@ int inNCCC_ATS_UnPack59(TRANSACTION_OBJECT *pobTran, unsigned char *uszUnPackBuf
                         else if (!memcmp(&uszUnPackBuf[inCnt], "CR", 2))
 			{
 
-                            /* Table ID “CR”: Cardholder Receipt  */
+                            /* Table ID “CR”: Cardholder Receipt */
                             inCnt += 2; /* Table ID */
                             if (ginDebug == VS_TRUE)
                             {
