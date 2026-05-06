@@ -12178,21 +12178,20 @@ int inECR_8N1_Standard_Pack(TRANSACTION_OBJECT *pobTran, ECR_TABLE * srECROb, ch
                         /* 目的地機場代碼 */
                         inPacketSizes += 5;
                         /* 航班號碼 */
-                        inPacketSizes += 5;  
+                        inPacketSizes += 5;
                         /* 持卡人同意接收數位帳單 */
                         memcpy(&szDataBuffer[inPacketSizes], pobTran->srBRec.szCHESGEnable, 1);
-                        inPacketSizes++;
-                        /* 持卡人數位簽帳單網址GUID */
-                        memcpy(&szDataBuffer[inPacketSizes], pobTran->srBRec.szCHESGQRCode,sizeof(pobTran->srBRec.szCHESGQRCode));
+                        inPacketSizes += 1;
+                        /* 持卡人數位簽帳單網址GUID，最多36個字元 */
+                        memcpy(&szDataBuffer[inPacketSizes], pobTran->srBRec.szCHESGQRCode,strlen(pobTran->srBRec.szCHESGQRCode));
                         inPacketSizes += 36;
                         /* Reserved */
-                        inPacketSizes += 25; 
+                        inPacketSizes += 25;
                     }
                     else
                     {
                         inPacketSizes += 78;
-                    }
-                    
+                    }         
                 }
 	}
 	
