@@ -10725,7 +10725,6 @@ int inNCCC_DCC_CHECK(TRANSACTION_OBJECT *pobTran)
 				return (VS_SUCCESS);
 			}
 			
-                     /* 先讀取一筆資料，用來算出總筆數，根據二分法每次讀取一筆卡號做比對，判斷pobTran->srBRec.szPAN卡號是否在load bin table裡面 */   
 			/* 是否為Local Bin(查Local Bin Table) */
 			inRetVal = inNCCC_DCC_LocalBin_Check(pobTran->srBRec.szPAN);
 			if (inRetVal == VS_TRUE)
@@ -10818,7 +10817,6 @@ int inNCCC_DCC_CHECK(TRANSACTION_OBJECT *pobTran)
 				return (VS_SUCCESS);
 			}
 			
-                     /* 從HDT檔案取得包含DCC主機的那筆資料，並判斷主機功能是否有開，再loadHDPT的DCC主機那筆index，判斷是否要先結帳 */
 			/* DCC是否需要結帳(在DCC有開的狀況下，即使該交易不支援DCC，仍然需要DCC結帳成功) */
 			if (inNCCC_DCC_Func_Must_SETTLE(pobTran) != VS_SUCCESS)
 			{
@@ -10829,11 +10827,13 @@ int inNCCC_DCC_CHECK(TRANSACTION_OBJECT *pobTran)
 
 		/* 設定要進行DCC交易 */
 		pobTran->srBRec.uszDCCTransBit = VS_TRUE;
-
+                /* 因為szCHESGEnable為Y會擋紙本簽單，改為N */
+                strcpy(pobTran->srBRec.szCHESGEnable,"N");
 		if (ginDebug == VS_TRUE)
 		{
 			inLogPrintf(AT, "----------------------------------------");
 			inLogPrintf(AT, "DCC CHEKC:DCC ACCEPT");
+                        inLogPrintf(AT, "pobTran->srBRec.szCHESGEnable:%s",pobTran->srBRec.szCHESGEnable);
 			inLogPrintf(AT, "----------------------------------------");
 		}
 
@@ -10863,7 +10863,7 @@ int inNCCC_DCC_GetDCC_Enable(int inOrgHDTIndex, char *szHostEnable)
 		/* 直接使用 */
 	}
 	else
-	{       /* 找到符合那筆主機的Record */
+	{
 		if (inFunc_Find_Specific_HDTindex(inOrgHDTIndex, _HOST_NAME_DCC_, &ginDCCHostIndex) != VS_SUCCESS)
 		{
 			/* 找不到直接return VS_ERROR */
