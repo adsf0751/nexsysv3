@@ -11591,7 +11591,7 @@ int inFunc_DeleteBatch(TRANSACTION_OBJECT *pobTran)
 	
 	if (pobTran->uszNotDispMsgBit == VS_TRUE)
 	{
-		
+
 	}
 	else
 	{
@@ -32612,6 +32612,7 @@ int inFunc_Display_CHESG(TRANSACTION_OBJECT* pobTran)
 {
     inLogPrintf(AT, "----------------------------------------");
     inLogPrintf(AT, "inFunc_Display_CHESG() START !");
+    int i;
     int inRetVal  = VS_ERROR;
     char    szTemplate[500 + 1];
     char    szDispAmount[100 + 1];
@@ -32637,12 +32638,15 @@ int inFunc_Display_CHESG(TRANSACTION_OBJECT* pobTran)
 
     memset(szTemplate,0x00, sizeof(szTemplate));
     sprintf(szTemplate,"卡號/卡別:%-16s授權碼:%s",pobTran->srBRec.szCardLabel,pobTran->srBRec.szAuthCode);
-    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_8_3_, VS_FALSE); 
-     
+    inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_8_3_, VS_FALSE);   
     memset(szTemplate,0x00, sizeof(szTemplate));
     sprintf(szTemplate,pobTran->srBRec.szPAN);
+    for (i = 6; i < (strlen(szTemplate) - 4); i ++)
+    {
+            szTemplate[i] = 0x2A;
+    }
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X22_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_16_6_, VS_FALSE);
-
+   
     memset(szTemplate,0x00, sizeof(szTemplate));
     sprintf(szTemplate,"日期/時間:%.4s/%.2s/%.2s %.2s:%.2s",pobTran->srBRec.szDate,pobTran->srBRec.szDate+4,pobTran->srBRec.szDate+6,pobTran->srBRec.szTime,pobTran->srBRec.szTime+2);
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X33_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_16_7_, VS_FALSE);
@@ -32680,9 +32684,10 @@ int inFunc_Display_CHESG(TRANSACTION_OBJECT* pobTran)
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_4_, _COORDINATE_Y_LINE_16_16_, VS_FALSE);
     
     memset(szTemplate,0x00, sizeof(szTemplate));
-    strcpy(szTemplate, "https://www.google.com/intl/zh-TW/chrome/");
-    strcat(szTemplate,"r/550e8400-e29b-41d4-a716-446655440000001");//sys_guid()
-//    sprintf(szTemplate,"%s",pobTran->srBRec.szCHESGQRCode);//這邊QRCode可能從電文而來?
+//    strcpy(szTemplate, "https://www.google.com/intl/zh-TW/chrome/");
+//    strcat(szTemplate,"r/550e8400-e29b-41d4-a716-446655440000001");
+    /* pobTran->srBRec.szCHESGQRCode:sys_guid() */
+    sprintf(szTemplate,"https://chesg-uat.nccc.com.tw/qy?t=%s",pobTran->srBRec.szCHESGQRCode);
     
     if(strlen(szTemplate) <= 100)
         inCusDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_, 3,QR_VERSION49X49);
@@ -32743,7 +32748,13 @@ int inFunc_CHESG_Check(TRANSACTION_OBJECT* pobTran)
     int inRetVal = VS_ERROR;
     unsigned char   uszkey;
     char    szCustomerIndicator[3 + 1] = {0};
-
+    
+    if(ginMachineType == _CASTLE_TYPE_V3P_)
+    {
+        inLogPrintf(AT, "ginMachineType IS NOT SUPPORTED ,SKIP inFunc_CHESG_Check");
+        strcpy(pobTran->srBRec.szCHESGEnable,"N");        
+        return VS_SUCCESS;
+    }
     //負向交易 或是 非一般交易/紅利/分期 則跳過。
     if (    pobTran->srBRec.uszVOIDBit              ||
         !(  pobTran->srBRec.inCode == _SALE_        ||
@@ -32752,6 +32763,7 @@ int inFunc_CHESG_Check(TRANSACTION_OBJECT* pobTran)
             pobTran->srBRec.inCode == _REDEEM_SALE_ ))
     {
         inLogPrintf(AT, "inCode IS NOT SUPPORTED ,SKIP inFunc_CHESG_Check");
+        strcpy(pobTran->srBRec.szCHESGEnable,"N");        
         return VS_SUCCESS;
     }
     
@@ -32773,7 +32785,7 @@ int inFunc_CHESG_Check(TRANSACTION_OBJECT* pobTran)
         !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_111_KIOSK_STANDARD_, _CUSTOMER_INDICATOR_SIZE_) ||
         !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_112_, _CUSTOMER_INDICATOR_SIZE_)                ||
 
-        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_041_CASH_,_CUSTOMER_INDICATOR_SIZE_)   ||
+        !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_041_CASH_ ,_CUSTOMER_INDICATOR_SIZE_)  ||
         !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_042_BDAU1_, _CUSTOMER_INDICATOR_SIZE_) ||
         !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_043_BDAU9_, _CUSTOMER_INDICATOR_SIZE_) ||
 
@@ -32784,10 +32796,11 @@ int inFunc_CHESG_Check(TRANSACTION_OBJECT* pobTran)
         !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_094_, _CUSTOMER_INDICATOR_SIZE_)            ||
         !memcmp(szCustomerIndicator, _CUSTOMER_INDICATOR_104_, _CUSTOMER_INDICATOR_SIZE_) )
     {
-      inLogPrintf(AT, "szCustomerIndicator is [%s]",szCustomerIndicator);
-      return VS_SUCCESS;
+        inLogPrintf(AT, "szCustomerIndicator:[%s] NOT SUPPORTED ,SKIP inFunc_CHESG_Check",szCustomerIndicator);
+        strcpy(pobTran->srBRec.szCHESGEnable,"N");
+        return VS_SUCCESS;
     }
-    /* 防呆，之前選擇過同意 */
+    /* 防呆，之前選擇過同意/不同意 */
     if(strlen(pobTran->srBRec.szCHESGEnable) > 0)
 //    if(memcmp(pobTran->srBRec.szCHESGEnable,"Y",1) == 0)
     {
