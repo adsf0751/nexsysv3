@@ -32614,8 +32614,9 @@ int inFunc_Display_CHESG(TRANSACTION_OBJECT* pobTran)
     inLogPrintf(AT, "inFunc_Display_CHESG() START !");
     int i;
     int inRetVal  = VS_ERROR;
-    char    szTemplate[500 + 1];
-    char    szDispAmount[100 + 1];
+    char    szTemplate[500 + 1] = {0};
+    char    szDemoMode[2 + 1] = {0};
+    char    szDispAmount[100 + 1] = {0};
     unsigned char   uszkey;
     CTOS_LCDTClearDisplay();
     /* 不同意顯示電子簽帳單，跳過 */
@@ -32639,8 +32640,10 @@ int inFunc_Display_CHESG(TRANSACTION_OBJECT* pobTran)
     memset(szTemplate,0x00, sizeof(szTemplate));
     sprintf(szTemplate,"卡號/卡別:%-16s授權碼:%s",pobTran->srBRec.szCardLabel,pobTran->srBRec.szAuthCode);
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_8_3_, VS_FALSE);   
+    
     memset(szTemplate,0x00, sizeof(szTemplate));
     sprintf(szTemplate,pobTran->srBRec.szPAN);
+    /* 卡號遮掩 */
     for (i = 6; i < (strlen(szTemplate) - 4); i ++)
     {
             szTemplate[i] = 0x2A;
@@ -32652,13 +32655,35 @@ int inFunc_Display_CHESG(TRANSACTION_OBJECT* pobTran)
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X33_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_16_7_, VS_FALSE);
 
     memset(szDispAmount,0x00, sizeof(szDispAmount));
-    memset(szTemplate,0x00, sizeof(szTemplate));
     sprintf(szDispAmount,"%ld",pobTran->srBRec.lnTxnAmount);
     inFunc_Amount_Comma(szDispAmount, "NT$", 0x00, _SIGNED_NONE_, 16, _PADDING_RIGHT_);
     
+    memset(szTemplate,0x00, sizeof(szTemplate));
     sprintf(szTemplate,"總計(Total) %17s",szDispAmount);
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_8X33_, _COLOR_BLACK_, _COLOR_WHITE_, 0, _COORDINATE_Y_LINE_16_9_, VS_FALSE);
-
+    
+    memset(szDemoMode, 0x00, sizeof(szDemoMode));
+    inGetDemoMode(szDemoMode);
+    inLogPrintf(AT, "szDemoMode is %s ",szDemoMode);
+    if (memcmp(szDemoMode, "Y", strlen("Y")) == 0)
+    {   
+        /* 教育訓練版QRCode顯示文字訊息：教育訓練版不產生數位化簽帳單網址URL */
+        if(inDISP_PutGraphic(_DEMO_QRCODE, 0,  _COORDINATE_Y_LINE_16_11_) != VS_SUCCESS)
+        {
+            inLogPrintf(AT, "%s is error",_DEMO_QRCODE);
+        }
+    }
+    else
+    {
+        memset(szTemplate,0x00, sizeof(szTemplate));
+        /* 這邊的url如果是變動的該怎麼辦? */
+        sprintf(szTemplate,"https://chesg-uat.nccc.com.tw/qy?t=%s",pobTran->srBRec.szCHESGQRCode);   
+        if(strlen(szTemplate) <= 100)
+            inCusDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_, 3,QR_VERSION49X49);
+        else
+            inCusDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_, 2,QR_VERSION73X73);
+    }
+    
     memset(szTemplate,0x00, sizeof(szTemplate));                  
     strcpy(szTemplate, "持卡人存根聯");
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X33_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_9_, _COORDINATE_Y_LINE_16_11_, VS_FALSE);
@@ -32683,17 +32708,6 @@ int inFunc_Display_CHESG(TRANSACTION_OBJECT* pobTran)
     strcpy(szTemplate, "掃描 QR Code 取得數位簽單");
     inDISP_ChineseFont_Point_Color_By_Graphic_Mode(szTemplate, _FONTSIZE_16X44_, _COLOR_BLACK_, _COLOR_WHITE_, _COORDINATE_X_16_4_, _COORDINATE_Y_LINE_16_16_, VS_FALSE);
     
-    memset(szTemplate,0x00, sizeof(szTemplate));
-//    strcpy(szTemplate, "https://www.google.com/intl/zh-TW/chrome/");
-//    strcat(szTemplate,"r/550e8400-e29b-41d4-a716-446655440000001");
-    /* pobTran->srBRec.szCHESGQRCode:sys_guid() */
-    sprintf(szTemplate,"https://chesg-uat.nccc.com.tw/qy?t=%s",pobTran->srBRec.szCHESGQRCode);
-    
-    if(strlen(szTemplate) <= 100)
-        inCusDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_, 3,QR_VERSION49X49);
-    else
-        inCusDISP_Display_QRCode(szTemplate, 0, _COORDINATE_Y_LINE_16_11_, 2,QR_VERSION73X73);
-
     inDISP_Timer_Start(_TIMER_NEXSYS_1_, 30);
     //inRetVal預設VS_ERROR，當inRetVal有異動(經過switch case或是timeout)跳出迴圈
     while(inRetVal != VS_SUCCESS)
